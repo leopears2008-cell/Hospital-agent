@@ -2,11 +2,96 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
+import { getOrCreateUser } from "./src/db/users.ts";
+import { createAppointment, getUserAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+app.post("/api/auth/sync", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { email, name } = req.body;
+    const uid = req.user?.uid;
+    if (!uid) throw new Error("No user ID");
+    
+    const user = await getOrCreateUser(uid, email || req.user?.email || "", name || "User");
+    res.json({ success: true, user });
+  } catch (error: any) {
+    console.error("Auth sync error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to sync user" });
+  }
+});
+
+app.post("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) throw new Error("No user ID");
+    
+    const data = { ...req.body, userId: uid };
+    const appointment = await createAppointment(data);
+    res.json({ success: true, appointment });
+  } catch (error: any) {
+    console.error("Booking error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to book appointment" });
+  }
+});
+
+app.get("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) throw new Error("No user ID");
+    
+    const userAppointments = await getUserAppointments(uid);
+    res.json({ success: true, appointments: userAppointments });
+  } catch (error: any) {
+    console.error("Fetch appointments error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch appointments" });
+  }
+});
+
+app.put("/api/appointments/:id/cancel", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) throw new Error("No user ID");
+    
+    const appointmentId = parseInt(req.params.id, 10);
+    if (isNaN(appointmentId)) throw new Error("Invalid appointment ID");
+
+    const appointment = await updateAppointmentStatus(appointmentId, uid, 'cancelled');
+    res.json({ success: true, appointment });
+  } catch (error: any) {
+    console.error("Cancel appointment error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to cancel appointment" });
+  }
+});
+
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+    
+    const ai = getAiClient();
+    const prompt = `You are an AI Health Assistant for Tamil Nadu Hospitals. 
+    A user is asking: "${message}"
+    
+    Provide a helpful, brief, and medically sound response. If they ask about doctors or availability, guide them to use the search filters in the app. Remind them you are an AI and for emergencies they should call 108.`;
+    
+    const response = await ai.models.generateContent({
+      model: "gemini-3.7-flash",
+      contents: prompt,
+    });
+    
+    res.json({ reply: response.text });
+  } catch (error: any) {
+    console.error("Chat error:", error);
+    res.status(500).json({ error: "Failed to generate reply" });
+  }
+});
 
 const getAiClient = () => {
   const apiKey = process.env.GEMINI_API_KEY;

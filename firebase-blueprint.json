@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A medical appointment booking",
+      "type": "object",
+      "properties": {
+        "hospitalId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "patientName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "time": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "symptoms": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "confirmed", "cancelled"]
+        },
+        "createdAt": {
+          "type": "timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp"
+        }
+      },
+      "required": ["hospitalId", "userId", "patientName", "date", "time", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "appointments/{appointmentId}": {
+      "schema": {
+        "$ref": "#/entities/Appointment"
+      },
+      "description": "Store all appointment bookings"
+    }
+  }
+}

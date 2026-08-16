@@ -8,6 +8,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Multi-Specialty & Research',
     address: 'Ida Scudder Road, Vellore, Tamil Nadu - 632004',
     contactNumber: '0416 228 1000',
+    whatsappNumber: '+91 98765 41001',
     emergencyAvailable: true,
     bedCapacity: '2,800+ beds',
     rating: 4.8,
@@ -15,7 +16,10 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 12.9234,
     lng: 79.1345,
     type: 'Trust/Charitable',
-    facilities: ['24/7 Trauma Care', 'Advanced Oncology', 'Organ Transplant', 'Cardiothoracic Surgery', 'Helipad']
+    facilities: ['24/7 Trauma Care', 'Advanced Oncology', 'Organ Transplant', 'Cardiothoracic Surgery', 'Helipad'],
+    currentOccupancyRate: 85,
+    verified: true,
+    centerOfExcellence: true
   },
   {
     id: 'apollo-chennai',
@@ -24,6 +28,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Advanced Multi-Specialty & Cardiology',
     address: '21 Greams Lane, Thousand Lights, Chennai, Tamil Nadu - 600006',
     contactNumber: '044 2829 0200',
+    whatsappNumber: '+91 98765 41002',
     emergencyAvailable: true,
     bedCapacity: '600+ beds',
     rating: 4.7,
@@ -31,7 +36,10 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 13.0604,
     lng: 80.2527,
     type: 'Private',
-    facilities: ['24/7 Emergency', 'Robotic Surgery', 'Proton Therapy', 'Advanced ICU', 'Air Ambulance']
+    facilities: ['24/7 Emergency', 'Robotic Surgery', 'Proton Therapy', 'Advanced ICU', 'Air Ambulance'],
+    currentOccupancyRate: 92,
+    verified: true,
+    centerOfExcellence: true
   },
   {
     id: 'miot-chennai',
@@ -40,6 +48,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Orthopedics & Multi-Specialty',
     address: '4/112 Mount Poonamallee Road, Manapakkam, Chennai, Tamil Nadu - 600089',
     contactNumber: '044 2249 2288',
+    whatsappNumber: '+91 98765 41003',
     emergencyAvailable: true,
     bedCapacity: '1,000 beds',
     rating: 4.6,
@@ -47,7 +56,10 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 13.0185,
     lng: 80.1772,
     type: 'Private',
-    facilities: ['24/7 Trauma Care', 'Joint Replacement', 'Vascular Surgery', 'Radiology', 'Rehabilitation']
+    facilities: ['24/7 Trauma Care', 'Joint Replacement', 'Vascular Surgery', 'Radiology', 'Rehabilitation'],
+    currentOccupancyRate: 65,
+    verified: true,
+    centerOfExcellence: true
   },
   {
     id: 'stanley-chennai',
@@ -56,6 +68,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'General, Plastic Surgery & Multi-Specialty',
     address: 'Old Jail Road, George Town, Chennai, Tamil Nadu - 600001',
     contactNumber: '044 2528 1355',
+    whatsappNumber: '+91 98765 41004',
     emergencyAvailable: true,
     bedCapacity: '1,550 beds',
     rating: 4.3,
@@ -63,7 +76,9 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 13.1021,
     lng: 80.2831,
     type: 'Government',
-    facilities: ['24/7 Government Emergency', 'Liver Transplant Center', 'Pediatric Surgery', 'Blood Bank', 'Burn Unit']
+    facilities: ['24/7 Government Emergency', 'Liver Transplant Center', 'Pediatric Surgery', 'Blood Bank', 'Burn Unit'],
+    currentOccupancyRate: 98,
+    verified: true
   },
   {
     id: 'rajiv-gandhi-chennai',
@@ -72,6 +87,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Tertiary Care & Trauma',
     address: 'EVR Periyar Salai, Park Town, Chennai, Tamil Nadu - 600003',
     contactNumber: '044 2530 5000',
+    whatsappNumber: '+91 98765 41005',
     emergencyAvailable: true,
     bedCapacity: '3,000+ beds',
     rating: 4.4,
@@ -79,7 +95,10 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 13.0817,
     lng: 80.2785,
     type: 'Government',
-    facilities: ['24/7 Mega Trauma Center', 'Cardiology', 'Neurology', 'Dialysis Unit', 'Trauma Care']
+    facilities: ['24/7 Mega Trauma Center', 'Cardiology', 'Neurology', 'Dialysis Unit', 'Trauma Care'],
+    currentOccupancyRate: 100,
+    verified: true,
+    centerOfExcellence: true
   },
   {
     id: 'kovai-medical-cbe',
@@ -88,6 +107,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Advanced Multi-Specialty',
     address: 'Avinashi Road, Civil Aerodrome Post, Coimbatore, Tamil Nadu - 641014',
     contactNumber: '0422 432 3800',
+    whatsappNumber: '+91 98765 41006',
     emergencyAvailable: true,
     bedCapacity: '1,000+ beds',
     rating: 4.7,
@@ -95,7 +115,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 11.0267,
     lng: 77.0375,
     type: 'Private',
-    facilities: ['24/7 Accident & Emergency', 'Comprehensive Cancer Center', 'Neurosciences', 'Neonatology']
+    facilities: ['24/7 Accident & Emergency', 'Comprehensive Cancer Center', 'Neurosciences', 'Neonatology'],
+    currentOccupancyRate: 45
   },
   {
     id: 'psg-cbe',
@@ -104,6 +125,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Multi-Specialty & Medical Education',
     address: 'PSG College of Nursing Campus, Peelamedu, Coimbatore, Tamil Nadu - 641004',
     contactNumber: '0422 257 0170',
+    whatsappNumber: '+91 98765 41007',
     emergencyAvailable: true,
     bedCapacity: '950 beds',
     rating: 4.5,
@@ -111,7 +133,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 11.0183,
     lng: 77.0058,
     type: 'Trust/Charitable',
-    facilities: ['24/7 Emergency & Trauma', 'Cardiac Care', 'Advanced Diagnostics', 'Infertility Clinic']
+    facilities: ['24/7 Emergency & Trauma', 'Cardiac Care', 'Advanced Diagnostics', 'Infertility Clinic'],
+    currentOccupancyRate: 72
   },
   {
     id: 'gandhigram-madurai',
@@ -120,6 +143,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Super-Specialty & Cancer Care',
     address: 'Lake Area, Melur Road, Madurai, Tamil Nadu - 625107',
     contactNumber: '0452 258 8741',
+    whatsappNumber: '+91 98765 41008',
     emergencyAvailable: true,
     bedCapacity: '1,000+ beds',
     rating: 4.6,
@@ -127,7 +151,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 9.9482,
     lng: 78.1394,
     type: 'Private',
-    facilities: ['24/7 Emergency', 'Bone Marrow Transplant', 'PET-CT Scan', 'Paediatric ICU', 'Robotic Surgery']
+    facilities: ['24/7 Emergency', 'Bone Marrow Transplant', 'PET-CT Scan', 'Paediatric ICU', 'Robotic Surgery'],
+    currentOccupancyRate: 60
   },
   {
     id: 'gr-madurai',
@@ -136,6 +161,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Tertiary Care & Emergency',
     address: 'Panagal Road, Alwarpuram, Madurai, Tamil Nadu - 625020',
     contactNumber: '0452 253 2535',
+    whatsappNumber: '+91 98765 41009',
     emergencyAvailable: true,
     bedCapacity: '2,500+ beds',
     rating: 4.2,
@@ -143,7 +169,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 9.9252,
     lng: 78.1198,
     type: 'Government',
-    facilities: ['24/7 Government Trauma', 'Regional Diagnostic Center', 'Blood Bank', 'Neonatal ICU']
+    facilities: ['24/7 Government Trauma', 'Regional Diagnostic Center', 'Blood Bank', 'Neonatal ICU'],
+    currentOccupancyRate: 88
   },
   {
     id: 'trichy-rio-trichy',
@@ -152,6 +179,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Multi-Specialty & Cardiac Care',
     address: 'Hazrath Salai, Cantonment, Tiruchirappalli, Tamil Nadu - 620001',
     contactNumber: '0431 407 7777',
+    whatsappNumber: '+91 98765 41010',
     emergencyAvailable: true,
     bedCapacity: '250+ beds',
     rating: 4.6,
@@ -159,7 +187,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 10.7905,
     lng: 78.7047,
     type: 'Private',
-    facilities: ['24/7 Heart Station', 'Neurocare', 'Laparoscopic Surgery', 'Dialysis']
+    facilities: ['24/7 Heart Station', 'Neurocare', 'Laparoscopic Surgery', 'Dialysis'],
+    currentOccupancyRate: 35
   },
   {
     id: 'mgm-trichy',
@@ -168,6 +197,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'General & Emergency Medicine',
     address: 'Pudukottai Road, Tiruchirappalli, Tamil Nadu - 620020',
     contactNumber: '0431 242 1333',
+    whatsappNumber: '+91 98765 41011',
     emergencyAvailable: true,
     bedCapacity: '1,200 beds',
     rating: 4.1,
@@ -175,7 +205,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 10.8050,
     lng: 78.6856,
     type: 'Government',
-    facilities: ['24/7 Emergency Ward', 'Trauma Care', 'Infectious Diseases Unit', 'Maternity Care']
+    facilities: ['24/7 Emergency Ward', 'Trauma Care', 'Infectious Diseases Unit', 'Maternity Care'],
+    currentOccupancyRate: 95
   },
   {
     id: 'salem-arunai',
@@ -184,6 +215,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Multi-Specialty Care',
     address: 'Sivathapuram, Salem, Tamil Nadu - 636307',
     contactNumber: '0427 264 0000',
+    whatsappNumber: '+91 98765 41012',
     emergencyAvailable: true,
     bedCapacity: '300 beds',
     rating: 4.5,
@@ -191,7 +223,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 11.6643,
     lng: 78.1460,
     type: 'Private',
-    facilities: ['24/7 Emergency & Trauma', 'Cardiology', 'Orthopedics', 'Critical Care Unit']
+    facilities: ['24/7 Emergency & Trauma', 'Cardiology', 'Orthopedics', 'Critical Care Unit'],
+    currentOccupancyRate: 50
   },
   {
     id: 'mohan-kumaramangalam-salem',
@@ -200,6 +233,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Tertiary Care & Trauma',
     address: 'Steel Plant Road, Salem, Tamil Nadu - 636030',
     contactNumber: '0427 241 5555',
+    whatsappNumber: '+91 98765 41013',
     emergencyAvailable: true,
     bedCapacity: '1,000+ beds',
     rating: 4.2,
@@ -207,7 +241,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 11.6530,
     lng: 78.1620,
     type: 'Government',
-    facilities: ['24/7 Emergency', 'Trauma Care', 'Blood Bank', 'Pediatric Ward']
+    facilities: ['24/7 Emergency', 'Trauma Care', 'Blood Bank', 'Pediatric Ward'],
+    currentOccupancyRate: 78
   },
   {
     id: 'nellai-tvl',
@@ -216,6 +251,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Multi-Specialty & Regional Referral',
     address: 'High Ground, Tirunelveli, Tamil Nadu - 627011',
     contactNumber: '0462 257 2642',
+    whatsappNumber: '+91 98765 41014',
     emergencyAvailable: true,
     bedCapacity: '1,400 beds',
     rating: 4.3,
@@ -223,7 +259,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 8.7139,
     lng: 77.7567,
     type: 'Government',
-    facilities: ['24/7 Emergency Care', 'Regional Cancer Institute', 'Cardiology', 'Neonatal Care']
+    facilities: ['24/7 Emergency Care', 'Regional Cancer Institute', 'Cardiology', 'Neonatal Care'],
+    currentOccupancyRate: 82
   },
   {
     id: 'thanjavur-medical',
@@ -232,6 +269,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Multi-Specialty & Delta Region Care',
     address: 'Medical College Road, Thanjavur, Tamil Nadu - 613004',
     contactNumber: '04362 240 376',
+    whatsappNumber: '+91 98765 41015',
     emergencyAvailable: true,
     bedCapacity: '1,300 beds',
     rating: 4.2,
@@ -239,7 +277,8 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     lat: 10.7656,
     lng: 79.1350,
     type: 'Government',
-    facilities: ['24/7 Emergency Ward', 'Trauma Care', 'Pediatrics', 'Cardiology']
+    facilities: ['24/7 Emergency Ward', 'Trauma Care', 'Pediatrics', 'Cardiology'],
+    currentOccupancyRate: 90
   },
   {
     id: 'kongunad-erode',
@@ -248,6 +287,7 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     specialty: 'Multi-Specialty',
     address: 'Perundurai Road, Erode, Tamil Nadu - 638011',
     contactNumber: '0424 225 9999',
+    whatsappNumber: '+91 98765 41016',
     emergencyAvailable: true,
     bedCapacity: '250 beds',
     rating: 4.5,

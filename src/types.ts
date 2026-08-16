@@ -30,12 +30,29 @@ export interface Hospital {
   type: 'Government' | 'Private' | 'Trust/Charitable';
   facilities: string[];
   images?: string[];
+  currentOccupancyRate?: number; // 0-100 percentage
+  verified?: boolean;
+  centerOfExcellence?: boolean;
+  whatsappNumber?: string;
+}
+
+export interface Appointment {
+  id: string;
+  hospitalId: string;
+  userId: string;
+  patientName: string;
+  date: string;
+  time: string;
+  symptoms?: string;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface TriageResult {
-  recommendations: Hospital[];
   triageAdvice: string;
   emergencyNumbers: { name: string; number: string }[];
+  recommendations: Hospital[];
 }
 
 export interface SearchFilters {

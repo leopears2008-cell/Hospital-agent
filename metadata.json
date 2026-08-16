@@ -2,7 +2,8 @@
   "name": "Leo AI Chat",
   "description": "Comprehensive search and AI-powered healthcare directory for hospitals across Tamil Nadu with Google Maps integration and Gemini medical triage guidance.",
   "requestFramePermissions": [
-    "geolocation"
+    "geolocation",
+    "microphone"
   ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

@@ -1,6 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { X, Phone, MapPin, Bed, Star, ShieldAlert, CheckCircle, ExternalLink, Heart, MessageSquare, Send, User as UserIcon } from 'lucide-react';
+import { X, Phone, MapPin, Bed, Star, ShieldAlert, CheckCircle, ExternalLink, Heart, MessageSquare, Send, User as UserIcon, Calendar, ShieldCheck, Award } from 'lucide-react';
 import { Hospital, User, Review } from '../types';
+import { AppointmentModal } from './AppointmentModal';
 
 interface HospitalModalProps {
   hospital: Hospital;
@@ -16,6 +17,7 @@ export function HospitalModal({ hospital, onClose, isSaved, onToggleSave, curren
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
 
   useEffect(() => {
     try {
@@ -64,6 +66,10 @@ export function HospitalModal({ hospital, onClose, isSaved, onToggleSave, curren
     }
   };
 
+  const whatsappTarget = hospital.whatsappNumber || hospital.contactNumber;
+  const whatsappClean = whatsappTarget.replace(/\D/g, '');
+  const whatsappFinal = whatsappClean.length === 10 ? '91' + whatsappClean : whatsappClean;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white rounded-lg max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
@@ -93,7 +99,15 @@ export function HospitalModal({ hospital, onClose, isSaved, onToggleSave, curren
             )}
           </div>
 
-          <h2 className="text-xl font-bold mb-1 relative z-10">{hospital.name}</h2>
+          <h2 className="text-xl font-bold mb-1 relative z-10 flex items-center gap-2 flex-wrap">
+            {hospital.name}
+            {hospital.verified && (
+              <ShieldCheck className="w-5 h-5 text-blue-400" title="Verified Hospital" />
+            )}
+            {hospital.centerOfExcellence && (
+              <Award className="w-5 h-5 text-amber-400" title="Center of Excellence" />
+            )}
+          </h2>
           <p className="text-xs text-slate-400 flex items-center gap-1 relative z-10">
             <MapPin className="w-3.5 h-3.5 shrink-0" />
             <span>{hospital.address}</span>
@@ -141,6 +155,32 @@ export function HospitalModal({ hospital, onClose, isSaved, onToggleSave, curren
               <span className="text-xs font-bold text-slate-800 line-clamp-1">{hospital.specialty}</span>
             </div>
           </div>
+
+          {/* Occupancy Indicator */}
+          {hospital.currentOccupancyRate !== undefined && (
+            <div className="bg-slate-50 p-4 rounded border border-slate-200">
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-2">
+                <span className="text-slate-500">Live Facility Occupancy</span>
+                <span className={
+                  hospital.currentOccupancyRate > 85 ? 'text-rose-600' : 
+                  hospital.currentOccupancyRate > 65 ? 'text-amber-600' : 'text-emerald-600'
+                }>
+                  {hospital.currentOccupancyRate > 85 ? 'High / Busy' : 
+                   hospital.currentOccupancyRate > 65 ? 'Moderate' : 'Low / Available'} ({hospital.currentOccupancyRate}%)
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden border border-slate-300/50">
+                <div 
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    hospital.currentOccupancyRate > 85 ? 'bg-rose-500' : 
+                    hospital.currentOccupancyRate > 65 ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${hospital.currentOccupancyRate}%` }}
+                ></div>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-2 text-right">Estimated relative to total bed capacity</p>
+            </div>
+          )}
 
           {/* Description */}
           <div>
@@ -251,35 +291,61 @@ export function HospitalModal({ hospital, onClose, isSaved, onToggleSave, curren
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
-            <a
-              href={`tel:${hospital.contactNumber}`}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
-            >
-              <Phone className="w-4 h-4" /> Call: {hospital.contactNumber}
-            </a>
-
+          <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
             <button
-              onClick={() => onToggleSave(hospital)}
-              className={`p-2.5 rounded border transition-colors flex items-center justify-center ${
-                isSaved ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-              title={isSaved ? 'Saved to Favorites' : 'Save Hospital'}
+              onClick={() => setShowAppointmentModal(true)}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
             >
-              <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-500' : ''}`} />
+              <Calendar className="w-5 h-5" /> Book Appointment
             </button>
+            <div className="flex items-center gap-3">
+              <a
+                href={`tel:${hospital.contactNumber}`}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-2 rounded text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                <Phone className="w-4 h-4" /> Call
+              </a>
 
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital.name + ' ' + hospital.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-4 rounded text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" /> Directions
-            </a>
+              <a
+                href={`https://wa.me/${whatsappFinal}?text=${encodeURIComponent('Hello ' + hospital.name + ', I would like to inquire about booking an appointment.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2.5 px-2 rounded text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                <MessageSquare className="w-4 h-4" /> WhatsApp
+              </a>
+
+              <button
+                onClick={() => onToggleSave(hospital)}
+                className={`p-2.5 rounded border transition-colors flex items-center justify-center ${
+                  isSaved ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+                title={isSaved ? 'Saved to Favorites' : 'Save Hospital'}
+              >
+                <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-500' : ''}`} />
+              </button>
+
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital.name + ' ' + hospital.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-2 rounded text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" /> Directions
+              </a>
+            </div>
           </div>
         </div>
       </div>
+
+      {showAppointmentModal && (
+        <AppointmentModal
+          hospital={hospital}
+          currentUser={currentUser}
+          onClose={() => setShowAppointmentModal(false)}
+          onOpenAuth={onOpenAuth}
+        />
+      )}
     </div>
   );
 }

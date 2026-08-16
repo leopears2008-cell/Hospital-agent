@@ -1,7 +1,9 @@
-import { Shield, Sparkles, PhoneCall, LogOut, User as UserIcon, LogIn, UserPlus } from 'lucide-react';
+import { Shield, Sparkles, PhoneCall, LogOut, User as UserIcon, LogIn, UserPlus, Menu } from 'lucide-react';
 import { User } from '../types';
+import { EmergencyAlertsToggle } from './EmergencyAlertsToggle';
 
 interface NavbarProps {
+  onOpenSideMenu: () => void;
   onOpenAiAssistant: () => void;
   viewMode: 'split' | 'map' | 'list';
   setViewMode: (mode: 'split' | 'map' | 'list') => void;
@@ -9,9 +11,10 @@ interface NavbarProps {
   currentUser: User | null;
   onOpenAuth: (mode: 'login' | 'signup') => void;
   onLogout: () => void;
+  onOpenAppointments: () => void;
 }
 
-export function Navbar({ onOpenAiAssistant, viewMode, setViewMode, totalHospitals, currentUser, onOpenAuth, onLogout }: NavbarProps) {
+export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMode, totalHospitals, currentUser, onOpenAuth, onLogout, onOpenAppointments }: NavbarProps) {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
       {/* Emergency Top Bar */}
@@ -33,6 +36,12 @@ export function Navbar({ onOpenAiAssistant, viewMode, setViewMode, totalHospital
       {/* Main Header */}
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <button 
+            onClick={onOpenSideMenu}
+            className="p-1.5 hover:bg-slate-100 rounded transition-colors text-slate-600 mr-1"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <div className="w-9 h-9 bg-blue-600 rounded flex items-center justify-center text-white font-bold shadow-sm">
             <Shield className="w-5 h-5" />
           </div>
@@ -42,6 +51,8 @@ export function Navbar({ onOpenAiAssistant, viewMode, setViewMode, totalHospital
         </div>
 
         <div className="flex items-center gap-4">
+          <EmergencyAlertsToggle />
+          
           {/* View Toggle */}
           <div className="hidden md:flex bg-slate-100 p-1 rounded border border-slate-200">
             <button
@@ -77,10 +88,14 @@ export function Navbar({ onOpenAiAssistant, viewMode, setViewMode, totalHospital
           <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
             {currentUser ? (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded border border-slate-200">
+                <button
+                  onClick={onOpenAppointments}
+                  className="flex items-center gap-2 bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded border border-slate-200 transition-colors cursor-pointer"
+                  title="My Appointments"
+                >
                   <UserIcon className="w-4 h-4 text-blue-600" />
                   <span className="text-xs font-bold text-slate-800">{currentUser.name}</span>
-                </div>
+                </button>
                 <button
                   onClick={onLogout}
                   className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"

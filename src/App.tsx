@@ -7,6 +7,10 @@ import { HospitalList } from './components/HospitalList';
 import { HospitalModal } from './components/HospitalModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { AuthModal } from './components/AuthModal';
+import { UserAppointmentsModal } from './components/UserAppointmentsModal';
+import { LoginPage } from './components/LoginPage';
+import AIChatbot from './components/AIChatbot';
+import { SideMenu } from './components/SideMenu';
 
 export default function App() {
   const [hospitals] = useState<Hospital[]>(TAMIL_NADU_HOSPITALS);
@@ -20,6 +24,8 @@ export default function App() {
 
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'split' | 'map' | 'list'>('split');
   const [savedHospitalIds, setSavedHospitalIds] = useState<string[]>([]);
 
@@ -32,20 +38,40 @@ export default function App() {
   
   // Auth state persisted in localStorage
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null);
 
   useEffect(() => {
     import('./lib/firebase').then(({ auth }) => {
-      auth.onAuthStateChanged((user) => {
+      auth.onAuthStateChanged(async (user) => {
         if (user) {
           setCurrentUser({
             id: user.uid,
             name: user.displayName || user.email?.split('@')[0] || 'User',
             email: user.email || ''
           });
+
+          // Sync user to PostgreSQL
+          try {
+            const token = await user.getIdToken();
+            await fetch('/api/auth/sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                email: user.email,
+                name: user.displayName || user.email?.split('@')[0] || 'User'
+              })
+            });
+          } catch (err) {
+            console.error("Failed to sync user with database:", err);
+          }
         } else {
           setCurrentUser(null);
         }
+        setLoadingAuth(false);
       });
     });
   }, []);
@@ -192,9 +218,22 @@ export default function App() {
     );
   };
 
+  if (loadingAuth) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-100">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={setCurrentUser} />;
+  }
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 font-sans">
       <Navbar
+        onOpenSideMenu={() => setIsSideMenuOpen(true)}
         onOpenAiAssistant={() => setIsAiModalOpen(true)}
         viewMode={viewMode}
         setViewMode={setViewMode}
@@ -202,6 +241,7 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={(mode) => setAuthModalMode(mode)}
         onLogout={handleLogout}
+        onOpenAppointments={() => setIsAppointmentsModalOpen(true)}
       />
 
       <main className="flex-1 flex overflow-hidden relative">
@@ -273,6 +313,20 @@ export default function App() {
           }}
         />
       )}
+
+      {/* User Appointments Modal */}
+      {isAppointmentsModalOpen && currentUser && (
+        <UserAppointmentsModal onClose={() => setIsAppointmentsModalOpen(false)} />
+      )}
+
+      {/* Floating AI Chatbot */}
+      <AIChatbot />
+
+      {/* Side Menu with Tools */}
+      <SideMenu 
+        isOpen={isSideMenuOpen} 
+        onClose={() => setIsSideMenuOpen(false)} 
+      />
     </div>
   );
 }
