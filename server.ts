@@ -82,7 +82,7 @@ app.post("/api/chat", async (req, res) => {
     Provide a helpful, brief, and medically sound response. If they ask about doctors or availability, guide them to use the search filters in the app. Remind them you are an AI and for emergencies they should call 108.`;
     
     const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
     });
     
@@ -90,6 +90,41 @@ app.post("/api/chat", async (req, res) => {
   } catch (error: any) {
     console.error("Chat error:", error);
     res.status(500).json({ error: "Failed to generate reply" });
+  }
+});
+
+app.post("/api/symptom-checker", async (req, res) => {
+  try {
+    const { history, currentAnswer } = req.body;
+    
+    const ai = getAiClient();
+    
+    // Convert history into a string
+    const historyText = history.map((item: any) => `${item.role === 'ai' ? 'AI' : 'User'}: ${item.text}`).join('\n');
+    
+    const prompt = `You are an AI Symptom Checker for an Indian hospital platform. 
+    You are conducting a triage interview with a user to provide preliminary health insights. 
+    
+    Conversation History:
+    ${historyText}
+    User's latest response: "${currentAnswer}"
+    
+    Instructions:
+    1. If you need more information to give a preliminary insight, ask the next logical, simple, and brief question (e.g., duration, severity, other symptoms). Do not ask multiple questions at once.
+    2. If you have enough information (usually after 3-4 questions), provide a preliminary health insight. State clearly that this is NOT medical advice. Provide potential general causes and recommend the type of specialist they should see (e.g., General Physician, Cardiologist).
+    3. Always remind them to visit an emergency room or call 108 immediately if symptoms indicate a severe emergency (like severe chest pain, stroke symptoms).
+    
+    Respond directly with the next question or the final insight. Keep it friendly, empathetic, and professional.`;
+    
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    
+    res.json({ reply: response.text });
+  } catch (error: any) {
+    console.error("Symptom checker error:", error);
+    res.status(500).json({ error: "Failed to process symptom checker" });
   }
 });
 

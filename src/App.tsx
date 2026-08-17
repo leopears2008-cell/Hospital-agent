@@ -326,6 +326,8 @@ export default function App() {
       <SideMenu 
         isOpen={isSideMenuOpen} 
         onClose={() => setIsSideMenuOpen(false)} 
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
     </div>
   );

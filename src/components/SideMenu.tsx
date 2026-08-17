@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { X, Activity, Thermometer, HeartPulse, Stethoscope, Phone, Save, TrendingUp } from 'lucide-react';
+import { X, Activity, Thermometer, HeartPulse, Stethoscope, Phone, Save, TrendingUp, User as UserIcon, LogOut } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { User } from '../types';
 
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  currentUser: User | null;
+  onLogout: () => void;
 }
 
-export function SideMenu({ isOpen, onClose }: SideMenuProps) {
+export function SideMenu({ isOpen, onClose, currentUser, onLogout }: SideMenuProps) {
   const [height, setHeight] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
   const [bmiResult, setBmiResult] = useState<number | null>(null);
@@ -90,6 +93,28 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* User Profile / Logout section at top */}
+          {currentUser && (
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                  <UserIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">{currentUser.name}</p>
+                  <p className="text-xs text-slate-500">{currentUser.email}</p>
+                </div>
+              </div>
+              <button 
+                onClick={onLogout}
+                className="p-2 text-rose-500 hover:bg-rose-100 rounded-full transition-colors flex items-center justify-center"
+                title="Log out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+
           {/* BMI Calculator Section */}
           <div className="bg-slate-50 rounded border border-slate-200 p-4">
             <h3 className="font-bold text-sm text-slate-800 mb-3 flex items-center gap-2">

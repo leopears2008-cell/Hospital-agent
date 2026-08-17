@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, User, Mic, MicOff, Volume2, VolumeX, Stethoscope, MessageCircle } from 'lucide-react';
 import { auth } from '../lib/firebase';
 
 // Add type support for window
@@ -12,7 +12,11 @@ declare global {
 
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'symptom'>('chat');
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
+  const [symptomMessages, setSymptomMessages] = useState<{role: 'user' | 'ai', text: string}[]>([
+    { role: 'ai', text: "Welcome to the Symptom Checker. Please describe the symptoms you are experiencing today in a few words." }
+  ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -22,7 +26,7 @@ export default function AIChatbot() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, symptomMessages, activeTab]);
 
   const toggleListening = async () => {
     if (isListening) {
@@ -118,7 +122,12 @@ export default function AIChatbot() {
     if (!input.trim()) return;
     
     const userMsg = input.trim();
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    if (activeTab === 'chat') {
+      setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    } else {
+      setSymptomMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    }
+    
     setInput('');
     setLoading(true);
     
@@ -134,22 +143,42 @@ export default function AIChatbot() {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ message: userMsg })
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(prev => [...prev, { role: 'ai', text: data.reply }]);
-        speak(data.reply);
+      if (activeTab === 'chat') {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ message: userMsg })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setMessages(prev => [...prev, { role: 'ai', text: data.reply }]);
+          speak(data.reply);
+        } else {
+          throw new Error('Failed to fetch response');
+        }
       } else {
-        throw new Error('Failed to fetch response');
+        const res = await fetch('/api/symptom-checker', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ history: symptomMessages, currentAnswer: userMsg })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setSymptomMessages(prev => [...prev, { role: 'ai', text: data.reply }]);
+          speak(data.reply);
+        } else {
+          throw new Error('Failed to fetch response');
+        }
       }
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'ai', text: "Sorry, I'm having trouble connecting right now." }]);
+      if (activeTab === 'chat') {
+        setMessages(prev => [...prev, { role: 'ai', text: "Sorry, I'm having trouble connecting right now." }]);
+      } else {
+        setSymptomMessages(prev => [...prev, { role: 'ai', text: "Sorry, I'm having trouble connecting right now." }]);
+      }
     } finally {
       setLoading(false);
     }
@@ -161,7 +190,7 @@ export default function AIChatbot() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all z-50 focus:outline-none focus:ring-4 focus:ring-blue-200"
+          className="fixed bottom-6 right-6 p-4 bg-white text-slate-800 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200 hover:bg-slate-50 transition-all z-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
         >
           <MessageSquare className="w-6 h-6" />
         </button>
@@ -169,47 +198,65 @@ export default function AIChatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-[350px] h-[500px] bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 flex flex-col z-50 overflow-hidden sm:w-[400px]">
+        <div className="fixed bottom-6 right-6 w-[350px] h-[500px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col z-50 overflow-hidden sm:w-[400px]">
           {/* Header */}
-          <div className="px-4 py-3 bg-blue-600 text-white flex justify-between items-center">
+          <div className="px-4 py-3 bg-white border-b border-slate-200 text-slate-800 flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <Bot className="w-5 h-5" />
-              <span className="font-medium">AI Health Assistant</span>
+              <Bot className="w-5 h-5 text-slate-700" />
+              <span className="font-bold">AI Suite</span>
             </div>
             <div className="flex items-center space-x-1">
               <button 
                 onClick={() => setIsVoiceEnabled(!isVoiceEnabled)} 
-                className="p-1 hover:bg-blue-700 rounded-md transition-colors"
+                className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-md transition-colors"
                 title={isVoiceEnabled ? "Mute Voice" : "Enable Voice"}
               >
-                {isVoiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-blue-200" />}
+                {isVoiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-slate-300" />}
               </button>
-              <button onClick={handleClose} className="p-1 hover:bg-blue-700 rounded-md transition-colors">
+              <button onClick={handleClose} className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-md transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
+          
+          {/* Tabs */}
+          <div className="flex border-b border-slate-200 dark:border-slate-700 bg-white">
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`flex-1 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === 'chat' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+            >
+              <MessageCircle className="w-4 h-4" /> Assistant
+            </button>
+            <button
+              onClick={() => setActiveTab('symptom')}
+              className={`flex-1 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === 'symptom' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+            >
+              <Stethoscope className="w-4 h-4" /> Symptom Checker
+            </button>
+          </div>
 
           {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 space-y-4">
-            <div className="flex space-x-2">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-blue-600" />
+            {activeTab === 'chat' && (
+              <div className="flex space-x-2">
+                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-slate-700" />
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-4 py-2.5 text-sm text-slate-800 shadow-sm">
+                  Hi! I'm your AI assistant. How can I help you today? I can help you find a doctor, check availability, or answer general health FAQs.
+                </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-none px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 shadow-sm">
-                Hi! I'm your AI assistant. How can I help you today? I can help you find a doctor, check availability, or answer general health FAQs.
-              </div>
-            </div>
+            )}
             
-            {messages.map((msg, i) => (
+            {(activeTab === 'chat' ? messages : symptomMessages).map((msg, i) => (
               <div key={i} className={`flex space-x-2 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-slate-200' : 'bg-blue-100'}`}>
-                  {msg.role === 'user' ? <User className="w-4 h-4 text-slate-600 dark:text-slate-300" /> : <Bot className="w-4 h-4 text-blue-600" />}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                  {msg.role === 'user' ? <User className="w-4 h-4 text-white dark:text-slate-300" /> : <Bot className="w-4 h-4 text-slate-700" />}
                 </div>
                 <div className={`rounded-2xl px-4 py-2.5 text-sm shadow-sm max-w-[80%] ${
                   msg.role === 'user' 
-                    ? 'bg-blue-600 text-white rounded-tr-none' 
-                    : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-tl-none'
+                    ? 'bg-slate-800 text-white rounded-tr-none' 
+                    : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'
                 }`}>
                   {msg.text}
                 </div>
@@ -217,13 +264,13 @@ export default function AIChatbot() {
             ))}
             {loading && (
               <div className="flex space-x-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-slate-700" />
                 </div>
-                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-none px-4 py-3 flex items-center space-x-1 shadow-sm">
-                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" />
-                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce delay-75" />
-                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce delay-150" />
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-4 py-3 flex items-center space-x-1 shadow-sm">
+                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
+                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-75" />
+                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-150" />
                 </div>
               </div>
             )}
@@ -250,12 +297,12 @@ export default function AIChatbot() {
                 value={input}
                 onChange={(e) => setInput((e.target as HTMLInputElement).value)}
                 placeholder={isListening ? "Listening..." : "Type your message..."}
-                className="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 text-sm"
               />
               <button 
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 bg-slate-800 text-white rounded-xl hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Send className="w-4 h-4" />
               </button>
