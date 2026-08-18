@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Hospital, User, Appointment } from '../types';
-import { Search, Calendar, HeartPulse, Activity, Bell, ChevronRight, Clock, AlertTriangle } from 'lucide-react';
+import { Search, Calendar, HeartPulse, Activity, Bell, ChevronRight, Clock, AlertTriangle, UserPlus } from 'lucide-react';
 
 interface DashboardProps {
   currentUser: User;
   hospitals: Hospital[];
-  onOpenNavigation: (mode: 'map' | 'list') => void;
+  onOpenNavigation: (mode: 'map' | 'list' | 'doctors') => void;
   onOpenAi: () => void;
   onOpenAppointments: () => void;
   onEmergency: () => void;
@@ -34,50 +34,47 @@ export function Dashboard({ currentUser, hospitals, onOpenNavigation, onOpenAi, 
     <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* Header & Welcome */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Good morning, {currentUser.name.split(' ')[0]}</h1>
-            <p className="text-slate-500 mt-1">Here is your health overview for today.</p>
+        {/* Hero Section */}
+        <div className="bg-white rounded-3xl p-8 md:p-12 border border-slate-100 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center justify-between">
+          <div className="relative z-10 max-w-xl">
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-4">
+              Find the right healthcare, faster.
+            </h1>
+            <p className="text-lg text-slate-600 mb-8">
+              Search hospitals, doctors, specialties, and book appointments instantly. Or let our AI guide you.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <button 
+                onClick={() => onOpenNavigation('list')}
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+              >
+                <Search className="w-5 h-5" /> Find Hospitals
+              </button>
+              <button 
+                onClick={onOpenAi}
+                className="bg-purple-100 text-purple-700 hover:bg-purple-200 px-6 py-3 rounded-xl font-bold transition-colors shadow-sm flex items-center gap-2"
+              >
+                <Activity className="w-5 h-5" /> Talk to AI
+              </button>
+            </div>
           </div>
-          <button 
-            onClick={onEmergency}
-            className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2.5 rounded-full font-bold hover:bg-red-100 transition-colors border border-red-200"
-          >
-            <AlertTriangle className="w-5 h-5" />
-            Emergency Mode
-          </button>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button onClick={() => onOpenNavigation('list')} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-100 transition-all flex flex-col items-center justify-center gap-3 text-slate-700 hover:text-blue-600 group">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Search className="w-6 h-6" />
-            </div>
-            <span className="font-semibold text-sm">Find Hospital</span>
-          </button>
           
-          <button onClick={() => onOpenNavigation('list')} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:teal-100 transition-all flex flex-col items-center justify-center gap-3 text-slate-700 hover:text-teal-600 group">
-            <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <span className="font-semibold text-sm">Book Visit</span>
-          </button>
-
-          <button onClick={onOpenAi} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-purple-100 transition-all flex flex-col items-center justify-center gap-3 text-slate-700 hover:text-purple-600 group">
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Activity className="w-6 h-6" />
-            </div>
-            <span className="font-semibold text-sm">Ask AI</span>
-          </button>
-
-          <button onClick={onOpenAppointments} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-orange-100 transition-all flex flex-col items-center justify-center gap-3 text-slate-700 hover:text-orange-600 group">
-            <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Clock className="w-6 h-6" />
-            </div>
-            <span className="font-semibold text-sm">History</span>
-          </button>
+          <div className="hidden md:block absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-blue-50 to-transparent pointer-events-none"></div>
+          
+          <div className="hidden md:flex gap-4 relative z-10 mt-8 md:mt-0">
+             <div className="bg-white/80 backdrop-blur border border-slate-100 p-4 rounded-2xl shadow-sm rotate-[-6deg] hover:rotate-0 transition-transform cursor-pointer" onClick={() => onOpenNavigation('doctors')}>
+               <div className="w-12 h-12 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mb-3">
+                 <UserPlus className="w-6 h-6" />
+               </div>
+               <p className="font-bold text-slate-800">Find Doctor</p>
+             </div>
+             <div className="bg-white/80 backdrop-blur border border-slate-100 p-4 rounded-2xl shadow-sm rotate-[6deg] hover:rotate-0 transition-transform cursor-pointer" onClick={onEmergency}>
+               <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-3">
+                 <AlertTriangle className="w-6 h-6" />
+               </div>
+               <p className="font-bold text-slate-800">Emergency</p>
+             </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

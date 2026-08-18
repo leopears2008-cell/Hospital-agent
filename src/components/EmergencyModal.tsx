@@ -16,46 +16,43 @@ export function EmergencyModal({ onClose, hospitals, userLocation, onOpenNavigat
     .slice(0, 5); // Just show top 5
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      <div className="absolute inset-0 bg-red-600 animate-pulse opacity-10" />
+      <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={onClose} />
       
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative bg-white shadow-2xl w-full h-full md:h-auto md:max-h-[90vh] md:max-w-4xl md:rounded-3xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-red-600 p-6 sm:p-8 text-white relative flex-shrink-0">
+        <div className="bg-red-600 p-8 md:p-12 text-white relative flex-shrink-0 text-center flex flex-col items-center">
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-red-700/50 hover:bg-red-700 rounded-full transition-colors"
+            className="absolute top-6 right-6 p-3 bg-red-700/50 hover:bg-red-700 rounded-full transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-8 h-8" />
           </button>
           
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-inner">
-              <AlertTriangle className="w-7 h-7 text-red-600 animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">EMERGENCY MODE</h2>
-              <p className="text-red-100 font-medium">Please remain calm. Help is available.</p>
-            </div>
+          <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-inner mb-6">
+            <AlertTriangle className="w-12 h-12 text-red-600 animate-pulse" />
           </div>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-2">EMERGENCY MODE</h2>
+          <p className="text-red-100 font-bold text-xl mb-8">Please remain calm. Help is available.</p>
 
-          <div className="grid sm:grid-cols-2 gap-4 mt-8">
-             <button className="bg-white text-red-600 py-4 px-6 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
-               <Phone className="w-6 h-6" />
-               Call Ambulance (108)
-             </button>
-             <button className="bg-red-700/50 hover:bg-red-700 border border-red-500/50 text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-3">
-               <MapPin className="w-6 h-6" />
-               Share My Location
+          <div className="grid sm:grid-cols-2 gap-6 w-full max-w-2xl">
+             <a href="tel:108" className="bg-white text-red-600 py-6 px-6 rounded-2xl font-black text-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center gap-4">
+               <Phone className="w-8 h-8" />
+               Call 108
+             </a>
+             <button className="bg-red-700/50 hover:bg-red-700 border-2 border-red-500/50 text-white py-6 px-6 rounded-2xl font-bold text-xl shadow-xl transition-all flex items-center justify-center gap-4">
+               <MapPin className="w-7 h-7" />
+               Share Location
              </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="p-6 sm:p-8 overflow-y-auto bg-slate-50 flex-1">
-          <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-red-500" />
-            Nearby Emergency Hospitals
+        <div className="p-8 md:p-12 overflow-y-auto bg-slate-50 flex-1">
+          <h3 className="font-black text-slate-800 text-2xl mb-6 flex items-center gap-3">
+            <CheckCircle2 className="w-8 h-8 text-red-500" />
+            Nearest Emergency Departments
           </h3>
           
           <div className="space-y-4">

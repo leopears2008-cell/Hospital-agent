@@ -12,6 +12,8 @@ import { LoginPage } from './components/LoginPage';
 import AIChatbot from './components/AIChatbot';
 import { SideMenu } from './components/SideMenu';
 import { Dashboard } from './components/Dashboard';
+import { DoctorDirectory } from './components/DoctorDirectory';
+import { AdminDashboard } from './components/AdminDashboard';
 
 import { EmergencyModal } from './components/EmergencyModal';
 
@@ -30,7 +32,7 @@ export default function App() {
   const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'dashboard' | 'split' | 'map' | 'list'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'split' | 'map' | 'list' | 'doctors' | 'admin'>('dashboard');
   const [savedHospitalIds, setSavedHospitalIds] = useState<string[]>([]);
 
   // Geolocation and OSRM Routing states
@@ -52,7 +54,8 @@ export default function App() {
           setCurrentUser({
             id: user.uid,
             name: user.displayName || user.email?.split('@')[0] || 'User',
-            email: user.email || ''
+            email: user.email || '',
+            role: user.email === 'leopears2008@gmail.com' ? 'admin' : 'user'
           });
 
           // Sync user to PostgreSQL
@@ -257,6 +260,20 @@ export default function App() {
             onOpenAi={() => setIsAiModalOpen(true)}
             onOpenAppointments={() => setIsAppointmentsModalOpen(true)}
             onEmergency={() => setIsEmergencyModalOpen(true)}
+          />
+        )}
+
+        {viewMode === 'doctors' && (
+          <DoctorDirectory 
+            currentUser={currentUser}
+            onOpenAuth={(mode) => setAuthModalMode(mode)}
+          />
+        )}
+
+        {viewMode === 'admin' && currentUser?.role === 'admin' && (
+          <AdminDashboard 
+            appointments={[]} 
+            hospitals={hospitals} 
           />
         )}
 

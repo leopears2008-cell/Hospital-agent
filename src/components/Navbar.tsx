@@ -5,8 +5,8 @@ import { EmergencyAlertsToggle } from './EmergencyAlertsToggle';
 interface NavbarProps {
   onOpenSideMenu: () => void;
   onOpenAiAssistant: () => void;
-  viewMode: 'dashboard' | 'split' | 'map' | 'list';
-  setViewMode: (mode: 'dashboard' | 'split' | 'map' | 'list') => void;
+  viewMode: 'dashboard' | 'split' | 'map' | 'list' | 'doctors' | 'admin';
+  setViewMode: (mode: 'dashboard' | 'split' | 'map' | 'list' | 'doctors' | 'admin') => void;
   totalHospitals: number;
   currentUser: User | null;
   onOpenAuth: (mode: 'login' | 'signup') => void;
@@ -62,6 +62,12 @@ export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMod
               Home
             </button>
             <button
+              onClick={() => setViewMode('doctors')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'doctors' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Doctors
+            </button>
+            <button
               onClick={() => setViewMode('split')}
               className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'split' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-slate-900'}`}
             >
@@ -79,6 +85,14 @@ export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMod
             >
               Map
             </button>
+            {currentUser?.role === 'admin' && (
+              <button
+                onClick={() => setViewMode('admin')}
+                className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'admin' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-blue-600'}`}
+              >
+                Admin
+              </button>
+            )}
           </div>
 
           {/* AI Care Advisor Button */}
