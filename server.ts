@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { createAppointment, getUserAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
@@ -10,31 +10,37 @@ import { MOCK_DOCTORS } from "./src/data/doctors.ts";
 
 function retrieveKnowledgeBase(query: string) {
   const normalizedQuery = query.toLowerCase();
+  const keywords = normalizedQuery.split(/\s+/).filter(k => k.length > 2);
   
-  const matchedHospitals = TAMIL_NADU_HOSPITALS.filter(h => 
-    h.name.toLowerCase().includes(normalizedQuery) ||
-    h.cityOrDistrict.toLowerCase().includes(normalizedQuery) ||
-    h.specialty.toLowerCase().includes(normalizedQuery) ||
-    h.address.toLowerCase().includes(normalizedQuery)
-  );
+  let matchedHospitals = TAMIL_NADU_HOSPITALS.filter(h => {
+    const searchString = `${h.name} ${h.cityOrDistrict} ${h.specialty} ${h.address}`.toLowerCase();
+    return keywords.some(k => searchString.includes(k));
+  });
 
-  const hospitalsToInclude = matchedHospitals.length > 0 ? matchedHospitals : TAMIL_NADU_HOSPITALS;
+  if (matchedHospitals.length === 0) {
+    matchedHospitals = TAMIL_NADU_HOSPITALS.slice(0, 15);
+  } else if (matchedHospitals.length > 15) {
+    matchedHospitals = matchedHospitals.slice(0, 15);
+  }
 
-  const matchedDoctors = MOCK_DOCTORS.filter(d => 
-    d.name.toLowerCase().includes(normalizedQuery) ||
-    d.department.toLowerCase().includes(normalizedQuery) ||
-    d.specialization.toLowerCase().includes(normalizedQuery)
-  );
+  let matchedDoctors = MOCK_DOCTORS.filter(d => {
+    const searchString = `${d.name} ${d.department} ${d.specialization}`.toLowerCase();
+    return keywords.some(k => searchString.includes(k));
+  });
   
-  const doctorsToInclude = matchedDoctors.length > 0 ? matchedDoctors : MOCK_DOCTORS;
+  if (matchedDoctors.length === 0) {
+    matchedDoctors = MOCK_DOCTORS.slice(0, 10);
+  } else if (matchedDoctors.length > 10) {
+    matchedDoctors = matchedDoctors.slice(0, 10);
+  }
 
   return `
 --- INTERNAL KNOWLEDGE BASE (Tamil Nadu Hospitals & Doctors) ---
 HOSPITALS:
-${JSON.stringify(hospitalsToInclude.map(h => ({ id: h.id, name: h.name, city: h.cityOrDistrict, specialty: h.specialty, emergency: h.emergencyAvailable, address: h.address, rating: h.rating })), null, 2)}
+${JSON.stringify(matchedHospitals.map(h => ({ id: h.id, name: h.name, city: h.cityOrDistrict, specialty: h.specialty, emergency: h.emergencyAvailable, address: h.address, rating: h.rating })), null, 2)}
 
 DOCTORS:
-${JSON.stringify(doctorsToInclude.map(d => ({ id: d.id, name: d.name, department: d.department, specialization: d.specialization, fee: d.consultationFee, availableDays: d.availableDays, rating: d.rating })), null, 2)}
+${JSON.stringify(matchedDoctors.map(d => ({ id: d.id, name: d.name, department: d.department, specialization: d.specialization, fee: d.consultationFee, availableDays: d.availableDays, rating: d.rating })), null, 2)}
 --- 
 INSTRUCTIONS: Use the above verified internal data to answer the user's question. Do not invent hospitals or doctors that are not in this list.
 `;
@@ -114,16 +120,15 @@ app.post("/api/chat", async (req, res) => {
     // RAG step: Retrieve internal data based on the user's message
     const knowledgeBaseContext = retrieveKnowledgeBase(message);
     
-    const prompt = `You are an AI Health Assistant for Tamil Nadu Hospitals. 
-    A user is asking: "${message}"
-    
-    ${knowledgeBaseContext}
-    
-    Provide a helpful, brief, and medically sound response. If they ask about specific doctors, hospitals, or availability, answer using ONLY the internal knowledge base provided. Remind them you are an AI and for emergencies they should call 108.`;
-    
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
+    const response = await generateContentWithFallback(ai, {
+      contents: message,
+      config: {
+        systemInstruction: `You are Leo AI, an AI Health Assistant for Tamil Nadu Hospitals. 
+${knowledgeBaseContext}
+
+Instructions:
+Provide a helpful, brief, and medically sound response. If they ask about specific doctors, hospitals, or availability, answer using ONLY the internal knowledge base provided. Remind them you are an AI and for emergencies they should call 108. Keep responses highly empathetic, polite, and professional.`
+      }
     });
     
     res.json({ reply: response.text });
@@ -145,25 +150,24 @@ app.post("/api/symptom-checker", async (req, res) => {
     // Convert history into a string
     const historyText = history.map((item: any) => `${item.role === 'ai' ? 'AI' : 'User'}: ${item.text}`).join('\n');
     
-    const prompt = `You are an AI Symptom Checker for an Indian hospital platform. 
-    You are conducting a triage interview with a user to provide preliminary health insights. 
-    
-    Conversation History:
-    ${historyText}
-    User's latest response: "${currentAnswer}"
-    
-    ${knowledgeBaseContext}
-    
-    Instructions:
-    1. If you need more information to give a preliminary insight, ask the next logical, simple, and brief question (e.g., duration, severity, other symptoms). Do not ask multiple questions at once.
-    2. If you have enough information (usually after 3-4 questions), provide a preliminary health insight. State clearly that this is NOT medical advice. Provide potential general causes and recommend the type of specialist they should see. IMPORTANT: Using the INTERNAL KNOWLEDGE BASE provided, recommend specific hospitals or doctors that can help.
-    3. Always remind them to visit an emergency room or call 108 immediately if symptoms indicate a severe emergency (like severe chest pain, stroke symptoms).
-    
-    Respond directly with the next question or the final insight. Keep it friendly, empathetic, and professional.`;
-    
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
+    const response = await generateContentWithFallback(ai, {
+      contents: currentAnswer,
+      config: {
+        systemInstruction: `You are Leo AI, an AI Symptom Checker for an Indian hospital platform. 
+You are conducting a triage interview with a user to provide preliminary health insights. 
+
+Conversation History:
+${historyText}
+
+${knowledgeBaseContext}
+
+Instructions:
+1. If you need more information to give a preliminary insight, ask the next logical, simple, and brief question (e.g., duration, severity, other symptoms). Do not ask multiple questions at once.
+2. If you have enough information (usually after 3-4 questions), provide a preliminary health insight. State clearly that this is NOT medical advice. Provide potential general causes and recommend the type of specialist they should see. IMPORTANT: Using the INTERNAL KNOWLEDGE BASE provided, recommend specific hospitals or doctors that can help.
+3. Always remind them to visit an emergency room or call 108 immediately if symptoms indicate a severe emergency (like severe chest pain, stroke symptoms).
+
+Respond directly with the next question or the final insight. Keep it friendly, empathetic, and professional.`
+      }
     });
     
     res.json({ reply: response.text });
@@ -188,6 +192,25 @@ const getAiClient = () => {
   });
 };
 
+const generateContentWithFallback = async (ai: any, request: any) => {
+  try {
+    return await ai.models.generateContent({
+      ...request,
+      model: "gemini-3.7-flash",
+    });
+  } catch (error: any) {
+    const errorMsg = error?.message || "";
+    if (errorMsg.includes("503") || errorMsg.includes("UNAVAILABLE") || errorMsg.includes("high demand")) {
+      console.warn("gemini-3.7-flash is unavailable (503). Falling back to gemini-3.1-flash-lite...");
+      return await ai.models.generateContent({
+        ...request,
+        model: "gemini-3.1-flash-lite",
+      });
+    }
+    throw error;
+  }
+};
+
 app.post("/api/ai-recommend", async (req, res) => {
   try {
     const { query, district, specialty } = req.body;
@@ -205,30 +228,52 @@ The user is searching for hospitals in Tamil Nadu with the following details:
 
 ${knowledgeBaseContext}
 
-Provide a detailed response in JSON format containing:
-1. "recommendations": Array of 6 top hospitals matching this query. **CRITICAL: Prioritize recommending hospitals and doctors from the INTERNAL KNOWLEDGE BASE.** Include fields:
-   - name (string)
-   - cityOrDistrict (string)
-   - specialty (string)
-   - address (string)
-   - contactNumber (string)
-   - emergencyAvailable (boolean)
-   - bedCapacity (string, e.g. "500+ beds")
-   - rating (number, e.g. 4.6)
-   - description (string)
-   - lat (number, accurate latitude for this Tamil Nadu hospital)
-   - lng (number, accurate longitude for this Tamil Nadu hospital)
-2. "triageAdvice": Medical guidance or triage advice based on the user's query.
-3. "emergencyNumbers": Array of objects with name and number (e.g. [{"name": "Ambulance / Emergency", "number": "108"}, {"name": "State Health Helpline", "number": "104"}]).
+**CRITICAL: Prioritize recommending hospitals and doctors from the INTERNAL KNOWLEDGE BASE.**`;
 
-Ensure the response is valid JSON.`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
+    const response = await generateContentWithFallback(ai, {
       contents: prompt,
       config: {
-        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            recommendations: {
+              type: Type.ARRAY,
+              description: "Array of 6 top hospitals matching this query",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  cityOrDistrict: { type: Type.STRING },
+                  specialty: { type: Type.STRING },
+                  address: { type: Type.STRING },
+                  contactNumber: { type: Type.STRING },
+                  emergencyAvailable: { type: Type.BOOLEAN },
+                  bedCapacity: { type: Type.STRING },
+                  rating: { type: Type.NUMBER },
+                  description: { type: Type.STRING },
+                  lat: { type: Type.NUMBER },
+                  lng: { type: Type.NUMBER }
+                }
+              }
+            },
+            triageAdvice: {
+              type: Type.STRING,
+              description: "Medical guidance or triage advice based on the user's query."
+            },
+            emergencyNumbers: {
+              type: Type.ARRAY,
+              description: "Array of emergency contact numbers",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  number: { type: Type.STRING }
+                }
+              }
+            }
+          }
+        }
       },
     });
 

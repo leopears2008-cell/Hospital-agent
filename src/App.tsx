@@ -18,6 +18,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { EmergencyModal } from './components/EmergencyModal';
 
 export default function App() {
+  const [allHospitals] = useState<Hospital[]>(TAMIL_NADU_HOSPITALS);
   const [hospitals] = useState<Hospital[]>(TAMIL_NADU_HOSPITALS);
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
@@ -277,6 +278,7 @@ export default function App() {
           <div className={`${viewMode === 'split' ? 'w-full md:w-96 lg:w-[420px]' : 'w-full'} h-full shrink-0 z-10`}>
             <HospitalList
               hospitals={filteredHospitals}
+              allHospitals={allHospitals}
               filters={filters}
               setFilters={setFilters}
               onSelectHospital={(h) => setSelectedHospital(h)}

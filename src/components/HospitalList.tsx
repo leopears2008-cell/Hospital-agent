@@ -1,10 +1,12 @@
-import { Dispatch, SetStateAction, useState, useEffect } from 'react';
+import { Dispatch, SetStateAction, useState, useEffect, useMemo } from 'react';
 import { Search, MapPin, Phone, Bed, Star, ShieldAlert, Building2, Navigation, Compass, ExternalLink, ShieldCheck, Award, MessageCircle } from 'lucide-react';
 import { Hospital, SearchFilters } from '../types';
-import { TAMIL_NADU_DISTRICTS, MEDICAL_SPECIALTIES } from '../data/tamilNaduHospitals';
+import { MEDICAL_SPECIALTIES } from '../data/tamilNaduHospitals';
+import { getUniqueDistricts } from '../utils/hospitals';
 
 interface HospitalListProps {
   hospitals: Hospital[];
+  allHospitals: Hospital[];
   filters: SearchFilters;
   setFilters: Dispatch<SetStateAction<SearchFilters>>;
   onSelectHospital: (hospital: Hospital) => void;
@@ -41,6 +43,7 @@ function calculateDrivingStats(lat1: number, lon1: number, lat2: number, lon2: n
 
 export function HospitalList({
   hospitals,
+  allHospitals,
   filters,
   setFilters,
   onSelectHospital,
@@ -54,6 +57,9 @@ export function HospitalList({
   onOpenNavigation,
 }: HospitalListProps) {
   const [isSearching, setIsSearching] = useState(false);
+
+  // Calculate unique districts dynamically from all hospitals
+  const dynamicDistricts = useMemo(() => getUniqueDistricts(allHospitals), [allHospitals]);
 
   // Simulate network delay to show professional skeletons when filters change
   useEffect(() => {
@@ -115,7 +121,7 @@ export function HospitalList({
               onChange={(e) => setFilters(prev => ({ ...prev, district: e.target.value }))}
               className="w-full py-1.5 px-3 bg-slate-100 border border-slate-200 rounded text-xs text-slate-800 font-medium focus:bg-white focus:border-blue-500 outline-none"
             >
-              {TAMIL_NADU_DISTRICTS.map(d => (
+              {dynamicDistricts.map(d => (
                 <option key={d} value={d}>{d}</option>
               ))}
             </select>
