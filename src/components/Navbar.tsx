@@ -5,8 +5,8 @@ import { EmergencyAlertsToggle } from './EmergencyAlertsToggle';
 interface NavbarProps {
   onOpenSideMenu: () => void;
   onOpenAiAssistant: () => void;
-  viewMode: 'split' | 'map' | 'list';
-  setViewMode: (mode: 'split' | 'map' | 'list') => void;
+  viewMode: 'dashboard' | 'split' | 'map' | 'list';
+  setViewMode: (mode: 'dashboard' | 'split' | 'map' | 'list') => void;
   totalHospitals: number;
   currentUser: User | null;
   onOpenAuth: (mode: 'login' | 'signup') => void;
@@ -55,6 +55,12 @@ export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMod
           
           {/* View Toggle */}
           <div className="hidden md:flex bg-slate-100 p-1 rounded border border-slate-200">
+            <button
+              onClick={() => setViewMode('dashboard')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'dashboard' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Home
+            </button>
             <button
               onClick={() => setViewMode('split')}
               className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'split' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-slate-900'}`}

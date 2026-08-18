@@ -36,15 +36,36 @@ export interface Hospital {
   whatsappNumber?: string;
 }
 
+export interface Doctor {
+  id: string;
+  name: string;
+  photo: string;
+  specialization: string;
+  qualification: string;
+  experienceYears: number;
+  hospitalId: string;
+  department: string;
+  consultationFee: number;
+  availableDays: string[];
+  availableTimeSlots: string[];
+  rating: number;
+}
+
 export interface Appointment {
   id: string;
   hospitalId: string;
+  doctorId?: string;
+  department?: string;
   userId: string;
   patientName: string;
+  patientAge?: number;
+  patientGender?: string;
+  patientPhone?: string;
   date: string;
   time: string;
   symptoms?: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  qrCodeData?: string;
   createdAt: number;
   updatedAt: number;
 }

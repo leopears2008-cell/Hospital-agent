@@ -11,6 +11,9 @@ import { UserAppointmentsModal } from './components/UserAppointmentsModal';
 import { LoginPage } from './components/LoginPage';
 import AIChatbot from './components/AIChatbot';
 import { SideMenu } from './components/SideMenu';
+import { Dashboard } from './components/Dashboard';
+
+import { EmergencyModal } from './components/EmergencyModal';
 
 export default function App() {
   const [hospitals] = useState<Hospital[]>(TAMIL_NADU_HOSPITALS);
@@ -25,8 +28,9 @@ export default function App() {
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'split' | 'map' | 'list'>('split');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'split' | 'map' | 'list'>('dashboard');
   const [savedHospitalIds, setSavedHospitalIds] = useState<string[]>([]);
 
   // Geolocation and OSRM Routing states
@@ -100,7 +104,7 @@ export default function App() {
         setLocating(false);
       },
       (error: any) => {
-        console.error("Mount location error:", error.message || error);
+        console.warn("Mount location error:", error.message || error);
         setLocError('Unable to retrieve your location. Please check permissions.');
         setLocating(false);
       },
@@ -133,7 +137,7 @@ export default function App() {
           throw new Error('Invalid coordinates');
         }
       } catch (err: any) {
-        console.error("Location error:", err.message || err);
+        console.warn("Location error:", err.message || err);
         setLocError("Please allow your location to calculate routes.");
         setLocating(false);
         return;
@@ -245,6 +249,17 @@ export default function App() {
       />
 
       <main className="flex-1 flex overflow-hidden relative">
+        {viewMode === 'dashboard' && (
+          <Dashboard 
+            currentUser={currentUser}
+            hospitals={filteredHospitals}
+            onOpenNavigation={(mode) => setViewMode(mode)}
+            onOpenAi={() => setIsAiModalOpen(true)}
+            onOpenAppointments={() => setIsAppointmentsModalOpen(true)}
+            onEmergency={() => setIsEmergencyModalOpen(true)}
+          />
+        )}
+
         {/* List View / Split View Sidebar */}
         {(viewMode === 'split' || viewMode === 'list') && (
           <div className={`${viewMode === 'split' ? 'w-full md:w-96 lg:w-[420px]' : 'w-full'} h-full shrink-0 z-10`}>
@@ -329,6 +344,16 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
       />
+
+      {/* Emergency Mode Modal */}
+      {isEmergencyModalOpen && (
+        <EmergencyModal 
+          onClose={() => setIsEmergencyModalOpen(false)}
+          hospitals={hospitals}
+          userLocation={userLocation}
+          onOpenNavigation={openNavigation}
+        />
+      )}
     </div>
   );
 }

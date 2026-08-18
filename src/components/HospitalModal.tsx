@@ -102,10 +102,10 @@ export function HospitalModal({ hospital, onClose, isSaved, onToggleSave, curren
           <h2 className="text-xl font-bold mb-1 relative z-10 flex items-center gap-2 flex-wrap">
             {hospital.name}
             {hospital.verified && (
-              <ShieldCheck className="w-5 h-5 text-blue-400" title="Verified Hospital" />
+              <ShieldCheck className="w-5 h-5 text-blue-400" />
             )}
             {hospital.centerOfExcellence && (
-              <Award className="w-5 h-5 text-amber-400" title="Center of Excellence" />
+              <Award className="w-5 h-5 text-amber-400" />
             )}
           </h2>
           <p className="text-xs text-slate-400 flex items-center gap-1 relative z-10">

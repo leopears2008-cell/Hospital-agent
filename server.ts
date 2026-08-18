@@ -5,6 +5,40 @@ import { GoogleGenAI } from "@google/genai";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { createAppointment, getUserAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
+import { TAMIL_NADU_HOSPITALS } from "./src/data/tamilNaduHospitals.ts";
+import { MOCK_DOCTORS } from "./src/data/doctors.ts";
+
+function retrieveKnowledgeBase(query: string) {
+  const normalizedQuery = query.toLowerCase();
+  
+  const matchedHospitals = TAMIL_NADU_HOSPITALS.filter(h => 
+    h.name.toLowerCase().includes(normalizedQuery) ||
+    h.cityOrDistrict.toLowerCase().includes(normalizedQuery) ||
+    h.specialty.toLowerCase().includes(normalizedQuery) ||
+    h.address.toLowerCase().includes(normalizedQuery)
+  );
+
+  const hospitalsToInclude = matchedHospitals.length > 0 ? matchedHospitals : TAMIL_NADU_HOSPITALS;
+
+  const matchedDoctors = MOCK_DOCTORS.filter(d => 
+    d.name.toLowerCase().includes(normalizedQuery) ||
+    d.department.toLowerCase().includes(normalizedQuery) ||
+    d.specialization.toLowerCase().includes(normalizedQuery)
+  );
+  
+  const doctorsToInclude = matchedDoctors.length > 0 ? matchedDoctors : MOCK_DOCTORS;
+
+  return `
+--- INTERNAL KNOWLEDGE BASE (Tamil Nadu Hospitals & Doctors) ---
+HOSPITALS:
+${JSON.stringify(hospitalsToInclude.map(h => ({ id: h.id, name: h.name, city: h.cityOrDistrict, specialty: h.specialty, emergency: h.emergencyAvailable, address: h.address, rating: h.rating })), null, 2)}
+
+DOCTORS:
+${JSON.stringify(doctorsToInclude.map(d => ({ id: d.id, name: d.name, department: d.department, specialization: d.specialization, fee: d.consultationFee, availableDays: d.availableDays, rating: d.rating })), null, 2)}
+--- 
+INSTRUCTIONS: Use the above verified internal data to answer the user's question. Do not invent hospitals or doctors that are not in this list.
+`;
+}
 
 const app = express();
 const PORT = 3000;
@@ -76,10 +110,16 @@ app.post("/api/chat", async (req, res) => {
     }
     
     const ai = getAiClient();
+    
+    // RAG step: Retrieve internal data based on the user's message
+    const knowledgeBaseContext = retrieveKnowledgeBase(message);
+    
     const prompt = `You are an AI Health Assistant for Tamil Nadu Hospitals. 
     A user is asking: "${message}"
     
-    Provide a helpful, brief, and medically sound response. If they ask about doctors or availability, guide them to use the search filters in the app. Remind them you are an AI and for emergencies they should call 108.`;
+    ${knowledgeBaseContext}
+    
+    Provide a helpful, brief, and medically sound response. If they ask about specific doctors, hospitals, or availability, answer using ONLY the internal knowledge base provided. Remind them you are an AI and for emergencies they should call 108.`;
     
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -99,6 +139,9 @@ app.post("/api/symptom-checker", async (req, res) => {
     
     const ai = getAiClient();
     
+    // RAG step: Retrieve internal data based on the latest answer
+    const knowledgeBaseContext = retrieveKnowledgeBase(currentAnswer);
+    
     // Convert history into a string
     const historyText = history.map((item: any) => `${item.role === 'ai' ? 'AI' : 'User'}: ${item.text}`).join('\n');
     
@@ -109,9 +152,11 @@ app.post("/api/symptom-checker", async (req, res) => {
     ${historyText}
     User's latest response: "${currentAnswer}"
     
+    ${knowledgeBaseContext}
+    
     Instructions:
     1. If you need more information to give a preliminary insight, ask the next logical, simple, and brief question (e.g., duration, severity, other symptoms). Do not ask multiple questions at once.
-    2. If you have enough information (usually after 3-4 questions), provide a preliminary health insight. State clearly that this is NOT medical advice. Provide potential general causes and recommend the type of specialist they should see (e.g., General Physician, Cardiologist).
+    2. If you have enough information (usually after 3-4 questions), provide a preliminary health insight. State clearly that this is NOT medical advice. Provide potential general causes and recommend the type of specialist they should see. IMPORTANT: Using the INTERNAL KNOWLEDGE BASE provided, recommend specific hospitals or doctors that can help.
     3. Always remind them to visit an emergency room or call 108 immediately if symptoms indicate a severe emergency (like severe chest pain, stroke symptoms).
     
     Respond directly with the next question or the final insight. Keep it friendly, empathetic, and professional.`;
@@ -147,6 +192,10 @@ app.post("/api/ai-recommend", async (req, res) => {
   try {
     const { query, district, specialty } = req.body;
     const ai = getAiClient();
+    
+    // RAG step: Retrieve internal data based on the full query context
+    const retrievalQuery = `${query} ${district} ${specialty}`;
+    const knowledgeBaseContext = retrieveKnowledgeBase(retrievalQuery);
 
     const prompt = `You are a Tamil Nadu medical healthcare advisor and directory assistant.
 The user is searching for hospitals in Tamil Nadu with the following details:
@@ -154,8 +203,10 @@ The user is searching for hospitals in Tamil Nadu with the following details:
 - District / City: "${district || 'All Tamil Nadu'}"
 - Specialty needed: "${specialty || 'General / Multi-Specialty'}"
 
+${knowledgeBaseContext}
+
 Provide a detailed response in JSON format containing:
-1. "recommendations": Array of 6 top hospitals in Tamil Nadu matching this query, with fields:
+1. "recommendations": Array of 6 top hospitals matching this query. **CRITICAL: Prioritize recommending hospitals and doctors from the INTERNAL KNOWLEDGE BASE.** Include fields:
    - name (string)
    - cityOrDistrict (string)
    - specialty (string)
@@ -165,8 +216,8 @@ Provide a detailed response in JSON format containing:
    - bedCapacity (string, e.g. "500+ beds")
    - rating (number, e.g. 4.6)
    - description (string)
-   - lat (number, accurate latitude for this Tamil Nadu hospital, e.g. Chennai ~13.08, Coimbatore ~11.01, Madurai ~9.92, Vellore ~12.91, Trichy ~10.79, Salem ~11.66)
-   - lng (number, accurate longitude for this Tamil Nadu hospital, e.g. Chennai ~80.27, Coimbatore ~76.95, Madurai ~78.11, Vellore ~79.13, Trichy ~78.70, Salem ~78.14)
+   - lat (number, accurate latitude for this Tamil Nadu hospital)
+   - lng (number, accurate longitude for this Tamil Nadu hospital)
 2. "triageAdvice": Medical guidance or triage advice based on the user's query.
 3. "emergencyNumbers": Array of objects with name and number (e.g. [{"name": "Ambulance / Emergency", "number": "108"}, {"name": "State Health Helpline", "number": "104"}]).
 

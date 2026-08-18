@@ -56,7 +56,7 @@ export function EmergencyAlertsToggle() {
         checkProximity(latitude, longitude);
       },
       (error) => {
-        console.error("Geolocation error:", error);
+        console.warn("Geolocation error:", error);
         // Only alert once on failure to avoid spamming the user
         if (!isEnabled) {
           alert("Error getting location: " + error.message + ". Please ensure location permissions are granted.");

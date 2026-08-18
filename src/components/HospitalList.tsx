@@ -235,10 +235,10 @@ export function HospitalList({
                     <h3 className="font-bold text-slate-900 text-sm leading-tight hover:text-blue-600 transition-colors flex items-center gap-1.5 flex-wrap">
                       {hospital.name}
                       {hospital.verified && (
-                        <ShieldCheck className="w-4 h-4 text-blue-500" title="Verified Hospital" />
+                        <ShieldCheck className="w-4 h-4 text-blue-500" />
                       )}
                       {hospital.centerOfExcellence && (
-                        <Award className="w-4 h-4 text-amber-500" title="Center of Excellence" />
+                        <Award className="w-4 h-4 text-amber-500" />
                       )}
                     </h3>
                   </div>
