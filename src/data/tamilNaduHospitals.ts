@@ -297,6 +297,616 @@ export const TAMIL_NADU_HOSPITALS: Hospital[] = [
     type: 'Private',
     facilities: ['24/7 Emergency & Trauma', 'Critical Care', 'General Surgery', 'Diagnostics']
   }
+,
+  {
+  "id": "gh-ariyalur",
+  "name": "Government Medical College Hospital, Ariyalur",
+  "cityOrDistrict": "Ariyalur",
+  "specialty": "General & Multi-Specialty",
+  "address": "Ariyalur, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "700 beds",
+  "rating": 4,
+  "description": "District headquarters hospital providing comprehensive medical care to the region.",
+  "lat": 11.1401,
+  "lng": 79.0786,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Blood Bank",
+    "Maternity",
+    "General Surgery"
+  ]
+},
+  {
+  "id": "gh-chengalpattu",
+  "name": "Chengalpattu Medical College Hospital",
+  "cityOrDistrict": "Chengalpattu",
+  "specialty": "General & Multi-Specialty",
+  "address": "GST Road, Chengalpattu, Tamil Nadu",
+  "contactNumber": "044 2742 7088",
+  "emergencyAvailable": true,
+  "bedCapacity": "1,000 beds",
+  "rating": 4.2,
+  "description": "Major medical college and hospital serving Chengalpattu and surrounding areas.",
+  "lat": 12.6841,
+  "lng": 79.9833,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Intensive Care",
+    "Pediatrics",
+    "Orthopedics"
+  ]
+},
+  {
+  "id": "gh-cuddalore",
+  "name": "Government Headquarters Hospital, Cuddalore",
+  "cityOrDistrict": "Cuddalore",
+  "specialty": "General & Multi-Specialty",
+  "address": "Cuddalore, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "800 beds",
+  "rating": 4.1,
+  "description": "Primary government healthcare facility for the Cuddalore district.",
+  "lat": 11.748,
+  "lng": 79.7714,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Blood Bank",
+    "ICU",
+    "Trauma Care"
+  ]
+},
+  {
+  "id": "gh-dharmapuri",
+  "name": "Dharmapuri Medical College Hospital",
+  "cityOrDistrict": "Dharmapuri",
+  "specialty": "General & Multi-Specialty",
+  "address": "Dharmapuri, Tamil Nadu",
+  "contactNumber": "04342 231 600",
+  "emergencyAvailable": true,
+  "bedCapacity": "1,200 beds",
+  "rating": 4.2,
+  "description": "Tertiary care hospital serving Dharmapuri district.",
+  "lat": 12.1277,
+  "lng": 78.1586,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Neonatal Care",
+    "Surgical Wards",
+    "Imaging"
+  ]
+},
+  {
+  "id": "gh-dindigul",
+  "name": "Government Medical College Hospital, Dindigul",
+  "cityOrDistrict": "Dindigul",
+  "specialty": "General & Multi-Specialty",
+  "address": "Dindigul, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "800 beds",
+  "rating": 4.1,
+  "description": "District medical college hospital providing advanced care.",
+  "lat": 10.3624,
+  "lng": 77.9695,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "ICU",
+    "Dialysis",
+    "Maternity"
+  ]
+},
+  {
+  "id": "gh-kallakurichi",
+  "name": "Government Medical College Hospital, Kallakurichi",
+  "cityOrDistrict": "Kallakurichi",
+  "specialty": "General & Multi-Specialty",
+  "address": "Kallakurichi, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "700 beds",
+  "rating": 4,
+  "description": "Headquarters hospital serving the newly formed Kallakurichi district.",
+  "lat": 11.7383,
+  "lng": 78.9639,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Outpatient",
+    "Inpatient",
+    "Laboratory"
+  ]
+},
+  {
+  "id": "gh-kanchipuram",
+  "name": "Government Headquarters Hospital, Kanchipuram",
+  "cityOrDistrict": "Kanchipuram",
+  "specialty": "General & Multi-Specialty",
+  "address": "Kanchipuram, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "900 beds",
+  "rating": 4.2,
+  "description": "Main government hospital serving the temple city and district.",
+  "lat": 12.8342,
+  "lng": 79.7036,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Pediatrics",
+    "Surgery",
+    "Trauma Care"
+  ]
+},
+  {
+  "id": "gh-kanyakumari",
+  "name": "Kanyakumari Government Medical College Hospital (Asaripallam)",
+  "cityOrDistrict": "Kanyakumari",
+  "specialty": "General & Multi-Specialty",
+  "address": "Asaripallam, Nagercoil, Tamil Nadu",
+  "contactNumber": "04652 223 201",
+  "emergencyAvailable": true,
+  "bedCapacity": "1,500 beds",
+  "rating": 4.3,
+  "description": "Premier tertiary care hospital serving Kanyakumari district.",
+  "lat": 8.188,
+  "lng": 77.4124,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Specialty Clinics",
+    "ICU",
+    "Radiology"
+  ]
+},
+  {
+  "id": "gh-karur",
+  "name": "Government Medical College Hospital, Karur",
+  "cityOrDistrict": "Karur",
+  "specialty": "General & Multi-Specialty",
+  "address": "Karur, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "800 beds",
+  "rating": 4.1,
+  "description": "District headquarters medical college hospital.",
+  "lat": 10.9596,
+  "lng": 78.0766,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Blood Bank",
+    "Operation Theaters",
+    "ICU"
+  ]
+},
+  {
+  "id": "gh-krishnagiri",
+  "name": "Government Medical College Hospital, Krishnagiri",
+  "cityOrDistrict": "Krishnagiri",
+  "specialty": "General & Multi-Specialty",
+  "address": "Krishnagiri, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "700 beds",
+  "rating": 4,
+  "description": "Primary medical facility for the Krishnagiri district.",
+  "lat": 12.5186,
+  "lng": 78.2137,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Maternity",
+    "General Surgery",
+    "Pharmacy"
+  ]
+},
+  {
+  "id": "gh-nagapattinam",
+  "name": "Government Medical College Hospital, Nagapattinam",
+  "cityOrDistrict": "Nagapattinam",
+  "specialty": "General & Multi-Specialty",
+  "address": "Nagapattinam, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "750 beds",
+  "rating": 4,
+  "description": "Headquarters hospital providing care to coastal Nagapattinam.",
+  "lat": 10.7672,
+  "lng": 79.8449,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Trauma Care",
+    "Inpatient",
+    "Laboratory"
+  ]
+},
+  {
+  "id": "gh-namakkal",
+  "name": "Government Medical College Hospital, Namakkal",
+  "cityOrDistrict": "Namakkal",
+  "specialty": "General & Multi-Specialty",
+  "address": "Namakkal, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "800 beds",
+  "rating": 4.1,
+  "description": "Major government healthcare facility in Namakkal.",
+  "lat": 11.2189,
+  "lng": 78.1674,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "ICU",
+    "Orthopedics",
+    "Pediatrics"
+  ]
+},
+  {
+  "id": "gh-nilgiris",
+  "name": "Government Medical College Hospital, Udhagamandalam (Ooty)",
+  "cityOrDistrict": "Nilgiris",
+  "specialty": "General & Multi-Specialty",
+  "address": "Udhagamandalam, Nilgiris, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "650 beds",
+  "rating": 4.1,
+  "description": "Primary tertiary care hospital for the hilly Nilgiris district.",
+  "lat": 11.4102,
+  "lng": 76.695,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "High Altitude Medicine",
+    "Maternity",
+    "ICU"
+  ]
+},
+  {
+  "id": "gh-pudukkottai",
+  "name": "Government Medical College Hospital, Pudukkottai",
+  "cityOrDistrict": "Pudukkottai",
+  "specialty": "General & Multi-Specialty",
+  "address": "Pudukkottai, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "900 beds",
+  "rating": 4.2,
+  "description": "Modern medical college and hospital serving Pudukkottai district.",
+  "lat": 10.3797,
+  "lng": 78.8208,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Super Specialty Clinics",
+    "ICU",
+    "Radiology"
+  ]
+},
+  {
+  "id": "gh-ramanathapuram",
+  "name": "Government Medical College Hospital, Ramanathapuram",
+  "cityOrDistrict": "Ramanathapuram",
+  "specialty": "General & Multi-Specialty",
+  "address": "Ramanathapuram, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "800 beds",
+  "rating": 4.1,
+  "description": "Headquarters hospital providing care to the Ramnad region.",
+  "lat": 9.3639,
+  "lng": 78.8321,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Blood Bank",
+    "Dialysis",
+    "Trauma Care"
+  ]
+},
+  {
+  "id": "gh-ranipet",
+  "name": "Government Headquarters Hospital, Walajapet (Ranipet)",
+  "cityOrDistrict": "Ranipet",
+  "specialty": "General & Multi-Specialty",
+  "address": "Walajapet, Ranipet, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "600 beds",
+  "rating": 4,
+  "description": "District headquarters hospital for Ranipet.",
+  "lat": 12.9271,
+  "lng": 79.3582,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Inpatient",
+    "Laboratory",
+    "Outpatient"
+  ]
+},
+  {
+  "id": "gh-sivaganga",
+  "name": "Sivaganga Medical College Hospital",
+  "cityOrDistrict": "Sivaganga",
+  "specialty": "General & Multi-Specialty",
+  "address": "Sivaganga, Tamil Nadu",
+  "contactNumber": "04575 240 491",
+  "emergencyAvailable": true,
+  "bedCapacity": "900 beds",
+  "rating": 4.2,
+  "description": "Government medical college hospital serving Sivaganga district.",
+  "lat": 9.8433,
+  "lng": 78.4809,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Pediatrics",
+    "Surgery",
+    "Maternity"
+  ]
+},
+  {
+  "id": "gh-tenkasi",
+  "name": "Government Headquarters Hospital, Tenkasi",
+  "cityOrDistrict": "Tenkasi",
+  "specialty": "General & Multi-Specialty",
+  "address": "Tenkasi, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "650 beds",
+  "rating": 4,
+  "description": "Headquarters hospital for the newly formed Tenkasi district.",
+  "lat": 8.9592,
+  "lng": 77.3168,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Blood Bank",
+    "Trauma Care",
+    "General Medicine"
+  ]
+},
+  {
+  "id": "gh-theni",
+  "name": "Government Medical College Hospital, Theni",
+  "cityOrDistrict": "Theni",
+  "specialty": "General & Multi-Specialty",
+  "address": "K.Vilakku, Theni, Tamil Nadu",
+  "contactNumber": "04546 244 502",
+  "emergencyAvailable": true,
+  "bedCapacity": "1,000 beds",
+  "rating": 4.2,
+  "description": "Major tertiary care center serving Theni and neighboring areas.",
+  "lat": 10.0104,
+  "lng": 77.4768,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Specialty Departments",
+    "ICU",
+    "Radiology"
+  ]
+},
+  {
+  "id": "gh-thoothukudi",
+  "name": "Thoothukudi Medical College Hospital",
+  "cityOrDistrict": "Thoothukudi",
+  "specialty": "General & Multi-Specialty",
+  "address": "Thoothukudi, Tamil Nadu",
+  "contactNumber": "0461 232 2634",
+  "emergencyAvailable": true,
+  "bedCapacity": "1,200 beds",
+  "rating": 4.2,
+  "description": "Tertiary care hospital serving the port city and district.",
+  "lat": 8.7642,
+  "lng": 78.1348,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Burn Unit",
+    "ICU",
+    "Neonatal Care"
+  ]
+},
+  {
+  "id": "gh-tirupathur",
+  "name": "Government Headquarters Hospital, Tirupathur",
+  "cityOrDistrict": "Tirupattur",
+  "specialty": "General & Multi-Specialty",
+  "address": "Tirupathur, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "600 beds",
+  "rating": 4,
+  "description": "Primary government hospital for Tirupathur district.",
+  "lat": 12.4965,
+  "lng": 78.5638,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Outpatient",
+    "Inpatient",
+    "Laboratory"
+  ]
+},
+  {
+  "id": "gh-tiruppur",
+  "name": "Government Medical College Hospital, Tiruppur",
+  "cityOrDistrict": "Tiruppur",
+  "specialty": "General & Multi-Specialty",
+  "address": "Tiruppur, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "900 beds",
+  "rating": 4.1,
+  "description": "Headquarters hospital serving the industrial city of Tiruppur.",
+  "lat": 11.1085,
+  "lng": 77.3411,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Trauma Care",
+    "Dialysis",
+    "Maternity"
+  ]
+},
+  {
+  "id": "gh-tiruvallur",
+  "name": "Government Medical College Hospital, Tiruvallur",
+  "cityOrDistrict": "Tiruvallur",
+  "specialty": "General & Multi-Specialty",
+  "address": "Tiruvallur, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "800 beds",
+  "rating": 4.1,
+  "description": "Main government hospital serving the Tiruvallur district.",
+  "lat": 13.1418,
+  "lng": 79.9071,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Surgery",
+    "Pediatrics",
+    "ICU"
+  ]
+},
+  {
+  "id": "gh-tiruvannamalai",
+  "name": "Government Medical College Hospital, Tiruvannamalai",
+  "cityOrDistrict": "Tiruvannamalai",
+  "specialty": "General & Multi-Specialty",
+  "address": "Tiruvannamalai, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "1,000 beds",
+  "rating": 4.2,
+  "description": "Major hospital providing medical education and care to the region.",
+  "lat": 12.2253,
+  "lng": 79.0747,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Specialty Clinics",
+    "Trauma Care",
+    "Blood Bank"
+  ]
+},
+  {
+  "id": "gh-tiruvarur",
+  "name": "Government Medical College Hospital, Tiruvarur",
+  "cityOrDistrict": "Tiruvarur",
+  "specialty": "General & Multi-Specialty",
+  "address": "Tiruvarur, Tamil Nadu",
+  "contactNumber": "04366 222 253",
+  "emergencyAvailable": true,
+  "bedCapacity": "900 beds",
+  "rating": 4.1,
+  "description": "Tertiary care medical facility serving the delta region.",
+  "lat": 10.7661,
+  "lng": 79.6344,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "ICU",
+    "Radiology",
+    "Operation Theaters"
+  ]
+},
+  {
+  "id": "gh-viluppuram",
+  "name": "Government Villupuram Medical College Hospital",
+  "cityOrDistrict": "Villupuram",
+  "specialty": "General & Multi-Specialty",
+  "address": "Mundiyampakkam, Viluppuram, Tamil Nadu",
+  "contactNumber": "04146 224 455",
+  "emergencyAvailable": true,
+  "bedCapacity": "1,100 beds",
+  "rating": 4.2,
+  "description": "Major medical college hospital situated on the highway, adept at trauma care.",
+  "lat": 12.0006,
+  "lng": 79.5297,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Trauma Center",
+    "Dialysis",
+    "ICU"
+  ]
+},
+  {
+  "id": "gh-virudhunagar",
+  "name": "Government Medical College Hospital, Virudhunagar",
+  "cityOrDistrict": "Virudhunagar",
+  "specialty": "General & Multi-Specialty",
+  "address": "Virudhunagar, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "800 beds",
+  "rating": 4.1,
+  "description": "District headquarters hospital providing vital care.",
+  "lat": 9.5872,
+  "lng": 77.9514,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Maternity",
+    "General Surgery",
+    "Blood Bank"
+  ]
+},
+  {
+  "id": "gh-mayiladuthurai",
+  "name": "Government Headquarters Hospital, Mayiladuthurai",
+  "cityOrDistrict": "Mayiladuthurai",
+  "specialty": "General & Multi-Specialty",
+  "address": "Mayiladuthurai, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "500 beds",
+  "rating": 4,
+  "description": "Headquarters hospital for the new Mayiladuthurai district.",
+  "lat": 11.1026,
+  "lng": 79.6548,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Outpatient",
+    "Inpatient",
+    "Laboratory"
+  ]
+},
+  {
+  "id": "gh-perambalur",
+  "name": "Government Headquarters Hospital, Perambalur",
+  "cityOrDistrict": "Perambalur",
+  "specialty": "General & Multi-Specialty",
+  "address": "Perambalur, Tamil Nadu",
+  "contactNumber": "104",
+  "emergencyAvailable": true,
+  "bedCapacity": "600 beds",
+  "rating": 4,
+  "description": "Primary government hospital for Perambalur district.",
+  "lat": 11.233,
+  "lng": 78.8833,
+  "type": "Government",
+  "facilities": [
+    "24/7 Emergency",
+    "Blood Bank",
+    "Surgery",
+    "Maternity"
+  ]
+}
 ];
 
 export const TAMIL_NADU_DISTRICTS = [

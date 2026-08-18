@@ -185,18 +185,13 @@ export default function App() {
   }
 
   function openNavigation(hospital: Hospital) {
-    let lat = userLocation?.lat;
-    let lng = userLocation?.lng;
-
-    if (!lat || !lng) {
-      lat = 13.0827; // Default Chennai if location not set
-      lng = 80.2707;
+    // If we have precise coordinates from the app, use them. 
+    // Otherwise, omit origin so Google Maps automatically uses the device's live GPS location.
+    let url = `https://www.google.com/maps/dir/?api=1&destination=${hospital.lat},${hospital.lng}`;
+    
+    if (userLocation?.lat && userLocation?.lng) {
+      url += `&origin=${userLocation.lat},${userLocation.lng}`;
     }
-
-    const url =
-      `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=` +
-      `${lat}%2C${lng}%3B` +
-      `${hospital.lat}%2C${hospital.lng}`;
 
     window.open(url, "_blank");
   }
