@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Shield, Mail, Lock, User as UserIcon, LogIn, UserPlus, Activity, Map } from 'lucide-react';
 import { User } from '../types';
-import { auth, googleProvider } from '../lib/firebase';
+import { auth, googleSignIn } from '../lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 
 interface LoginPageProps {
@@ -57,7 +57,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     try {
       setError('');
       setLoading(true);
-      const credential = await signInWithPopup(auth, googleProvider);
+      const credential = await googleSignIn();
       onLoginSuccess({
         id: credential.user.uid,
         name: credential.user.displayName || credential.user.email?.split('@')[0] || '',

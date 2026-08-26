@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { X, Shield, Mail, Lock, User as UserIcon, LogIn, UserPlus } from 'lucide-react';
 import { User } from '../types';
-import { auth, googleProvider } from '../lib/firebase';
+import { auth, googleSignIn } from '../lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 
 interface AuthModalProps {
@@ -55,7 +55,7 @@ export function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }: Au
   const handleGoogleAuth = async () => {
     try {
       setError('');
-      const credential = await signInWithPopup(auth, googleProvider);
+      const credential = await googleSignIn();
       onLoginSuccess({
         id: credential.user.uid,
         name: credential.user.displayName || credential.user.email?.split('@')[0] || '',

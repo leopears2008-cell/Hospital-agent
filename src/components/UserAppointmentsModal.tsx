@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { TAMIL_NADU_HOSPITALS } from '../data/tamilNaduHospitals';
+import { sendEmail } from '../lib/gmail';
 
 interface UserAppointmentsModalProps {
   onClose: () => void;
@@ -17,7 +18,6 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error("Authentication required");
       const token = await firebaseUser.getIdToken();
-
       const res = await fetch('/api/appointments', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -48,7 +48,6 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) return;
       const token = await firebaseUser.getIdToken();
-
       const res = await fetch(`/api/appointments/${id}/cancel`, {
         method: 'PUT',
         headers: {
@@ -65,6 +64,25 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
       }
     } catch (err: any) {
       alert(err.message);
+    }
+  };
+
+  const handleSendEmail = async (app: any) => {
+    try {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser || !firebaseUser.email) {
+        alert("You must be logged in with an email to send confirmations.");
+        return;
+      }
+      
+      const hospitalName = getHospitalName(app.hospitalId);
+      const emailSubject = `Appointment Details: ${hospitalName}`;
+      const emailBody = `Dear ${app.patientName},\n\nHere are the details for your appointment at ${hospitalName}.\n\nDetails:\nDoctor: ${app.doctorId || app.department || 'Not specified'}\nDate: ${app.date}\nTime: ${app.time}\nStatus: ${app.status}\n\nThank you for using Hospital AI Agent.`;
+      
+      await sendEmail(firebaseUser.email, emailSubject, emailBody);
+      alert("Appointment details sent to your Gmail successfully!");
+    } catch (err) {
+      alert("Failed to send email. Please check your Gmail connection.");
     }
   };
 
@@ -136,12 +154,20 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
                       )}
 
                       {app.status !== 'cancelled' && (
-                        <button
-                          onClick={() => handleCancel(app.id)}
-                          className="text-xs font-medium text-rose-600 hover:text-rose-700 hover:underline mt-2"
-                        >
-                          Cancel Booking
-                        </button>
+                        <div className="flex flex-col items-end gap-1 mt-2">
+                          <button
+                            onClick={() => handleSendEmail(app)}
+                            className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+                          >
+                            <Mail className="w-3 h-3" /> Email Details
+                          </button>
+                          <button
+                            onClick={() => handleCancel(app.id)}
+                            className="text-xs font-medium text-rose-600 hover:text-rose-700 hover:underline"
+                          >
+                            Cancel Booking
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

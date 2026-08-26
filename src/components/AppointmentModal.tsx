@@ -2,6 +2,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import { X, Calendar, Clock, User as UserIcon, FileText, CheckCircle, ChevronRight, ChevronLeft, MapPin, Search, QrCode } from 'lucide-react';
 import { Hospital, User, Doctor } from '../types';
 import { auth } from '../lib/firebase';
+import { sendEmail } from '../lib/gmail';
 import { MOCK_DOCTORS } from '../data/doctors';
 
 interface AppointmentModalProps {
@@ -23,6 +24,7 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
   const [patientAge, setPatientAge] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
   const [symptoms, setSymptoms] = useState('');
+  const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
   
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -87,9 +89,21 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
         throw new Error(data.error || 'Failed to book appointment.');
       }
       
-      // Assume API returns a generated ID for the QR code
-      setAppointmentId(data.appointment?.id || `APT-${Math.floor(Math.random() * 100000)}`);
+      const aptId = data.appointment?.id || `APT-${Math.floor(Math.random() * 100000)}`;
+      setAppointmentId(aptId);
       setSuccess(true);
+      
+      // Try to send confirmation email
+      if (currentUser?.email && sendEmailConfirmation) {
+        try {
+          const emailSubject = `Appointment Confirmed: ${hospital.name}`;
+          const emailBody = `Dear ${patientName},\n\nYour appointment at ${hospital.name} has been confirmed.\n\nDetails:\nDoctor: ${selectedDoctor?.name || department}\nDate: ${date}\nTime: ${time}\nAppointment ID: ${aptId}\n\nPlease arrive 15 minutes before your scheduled time.\n\nThank you for using Hospital AI Agent.`;
+          await sendEmail(currentUser.email, emailSubject, emailBody);
+          console.log("Confirmation email sent.");
+        } catch (emailErr) {
+          console.error("Failed to send confirmation email:", emailErr);
+        }
+      }
     } catch (err: any) {
       console.error('Booking error:', err);
       setError(err.message || 'Failed to book appointment. Please try again.');
@@ -138,9 +152,9 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
                <CheckCircle className="w-10 h-10" />
              </div>
              <h3 className="text-2xl font-bold text-slate-800 mb-2">Booking Confirmed!</h3>
-             <p className="text-slate-500 mb-8 max-w-md">Your appointment with {selectedDoctor?.name} is scheduled for {date} at {time}. Please arrive 15 minutes early.</p>
+             <p className="text-slate-500 mb-6 max-w-md">Your appointment with {selectedDoctor?.name} is scheduled for {date} at {time}. Please arrive 15 minutes early.</p>
              
-             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 w-full max-w-sm relative overflow-hidden">
+             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 w-full max-w-sm relative overflow-hidden">
                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-400"></div>
                <div className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-4">Booking Reference</div>
                <div className="flex justify-center mb-4">
@@ -151,9 +165,31 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
                <div className="text-2xl font-black text-slate-800 tracking-widest">{appointmentId}</div>
              </div>
 
-             <button onClick={onClose} className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-12 rounded-xl transition-colors shadow-lg">
-               Done
-             </button>
+             <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+               <button 
+                 onClick={async () => {
+                   if (currentUser?.email) {
+                     try {
+                       const emailSubject = `Appointment Confirmed: ${hospital.name}`;
+                       const emailBody = `Dear ${patientName},\n\nYour appointment at ${hospital.name} has been confirmed.\n\nDetails:\nDoctor: ${selectedDoctor?.name || department}\nDate: ${date}\nTime: ${time}\nAppointment ID: ${appointmentId}\n\nPlease arrive 15 minutes before your scheduled time.\n\nThank you for using Hospital AI Agent.`;
+                       await sendEmail(currentUser.email, emailSubject, emailBody);
+                       alert("Confirmation email sent successfully!");
+                     } catch (err) {
+                       alert("Failed to send email. Please check your Gmail connection.");
+                     }
+                   }
+                 }}
+                 className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-xl border border-slate-200 transition-colors shadow-sm flex items-center justify-center gap-2"
+               >
+                 <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/>
+                 </svg>
+                 Send to Gmail
+               </button>
+               <button onClick={onClose} className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-lg">
+                 Done
+               </button>
+             </div>
           </div>
         ) : (
           <>
@@ -329,7 +365,20 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
                     </div>
                   </div>
                   
-                  <p className="text-xs text-slate-500 text-center mt-6">By confirming, you agree to pay the consultation fee at the hospital desk.</p>
+                  <div className="mt-6 flex items-center justify-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="emailConfirm"
+                      checked={sendEmailConfirmation}
+                      onChange={(e) => setSendEmailConfirmation(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="emailConfirm" className="text-sm font-medium text-slate-700">
+                      Send me an email confirmation
+                    </label>
+                  </div>
+
+                  <p className="text-xs text-slate-500 text-center mt-4">By confirming, you agree to pay the consultation fee at the hospital desk.</p>
                 </div>
               )}
 
