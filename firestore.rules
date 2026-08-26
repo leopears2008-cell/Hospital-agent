@@ -38,6 +38,10 @@ service cloud.firestore {
              data.updatedAt is timestamp;
     }
 
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && userId == request.auth.uid;
+    }
+
     match /appointments/{appointmentId} {
       allow read: if isSignedIn() && existing().userId == request.auth.uid;
       

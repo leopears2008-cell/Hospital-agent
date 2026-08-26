@@ -1,3 +1,4 @@
+import { auth } from './lib/firebase';
 import { useState, useMemo, useEffect } from 'react';
 import { TAMIL_NADU_HOSPITALS } from './data/tamilNaduHospitals';
 import { Hospital, SearchFilters, User } from './types';
@@ -50,7 +51,7 @@ export default function App() {
 
   useEffect(() => {
     import('./lib/firebase').then(({ auth }) => {
-      auth.onAuthStateChanged(async (user) => {
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
         if (user) {
           setCurrentUser({
             id: user.uid,
@@ -58,8 +59,6 @@ export default function App() {
             email: user.email || '',
             role: user.email === 'leopears2008@gmail.com' ? 'admin' : 'user'
           });
-
-          // Sync user to PostgreSQL
           try {
             const token = await user.getIdToken();
             await fetch('/api/auth/sync', {
@@ -81,6 +80,10 @@ export default function App() {
         }
         setLoadingAuth(false);
       });
+      return () => unsubscribe();
+    }).catch(err => {
+      console.error("Failed to load firebase auth", err);
+      setLoadingAuth(false);
     });
   }, []);
 

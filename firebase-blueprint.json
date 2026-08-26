@@ -1,5 +1,37 @@
 {
   "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "role": {
+          "type": "string",
+          "enum": ["patient", "doctor", "admin"]
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["uid", "role", "createdAt"]
+    },
     "Appointment": {
       "title": "Appointment",
       "description": "A medical appointment booking",
@@ -44,6 +76,12 @@
     }
   },
   "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Store all users"
+    },
     "appointments/{appointmentId}": {
       "schema": {
         "$ref": "#/entities/Appointment"
