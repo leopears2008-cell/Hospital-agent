@@ -1,20 +1,28 @@
-export const appointmentsDb: any[] = [];
-let nextAppointmentId = 1;
+import { adminDb } from '../lib/firebase-admin.ts';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function createAppointment(data: { hospitalId: string, userId: string, patientName: string, date: string, time: string, symptoms?: string }) {
   try {
+    const docRef = adminDb.collection('appointments').doc();
     const appointment = {
-      id: nextAppointmentId++,
+      id: docRef.id,
       hospitalId: data.hospitalId,
       userId: data.userId,
       patientName: data.patientName,
       date: data.date,
       time: data.time,
-      symptoms: data.symptoms,
-      status: 'pending'
+      symptoms: data.symptoms || '',
+      status: 'pending',
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
-    appointmentsDb.push(appointment);
-    return appointment;
+    await docRef.set(appointment);
+    
+    return {
+      ...appointment,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
   } catch (error) {
     console.error("Database appointment error:", error);
     throw new Error("Failed to book appointment.", { cause: error });
@@ -23,21 +31,52 @@ export async function createAppointment(data: { hospitalId: string, userId: stri
 
 export async function getUserAppointments(userId: string) {
   try {
-    return appointmentsDb.filter(a => a.userId === userId);
+    const snapshot = await adminDb.collection('appointments')
+      .where('userId', '==', userId)
+      .get();
+      
+    const appointments: any[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      appointments.push({
+        ...data,
+        id: doc.id,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      });
+    });
+    
+    return appointments;
   } catch (error) {
     console.error("Database fetch appointments error:", error);
     throw new Error("Failed to fetch appointments.", { cause: error });
   }
 }
 
-export async function updateAppointmentStatus(id: number, userId: string, status: 'pending' | 'confirmed' | 'cancelled') {
+export async function updateAppointmentStatus(id: string, userId: string, status: 'pending' | 'confirmed' | 'cancelled') {
   try {
-    const appointment = appointmentsDb.find(a => a.id === id);
-    if (!appointment) {
-      throw new Error("Appointment not found or not authorized.");
+    const docRef = adminDb.collection('appointments').doc(id);
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      throw new Error("Appointment not found.");
     }
-    appointment.status = status;
-    return appointment;
+    
+    const data = doc.data();
+    if (data?.userId !== userId) {
+      throw new Error("Not authorized.");
+    }
+    
+    await docRef.update({
+      status,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    
+    return {
+      ...data,
+      id,
+      status,
+    };
   } catch (error) {
     console.error("Database update appointment error:", error);
     throw new Error("Failed to update appointment status.", { cause: error });

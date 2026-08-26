@@ -5,6 +5,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { createAppointment, getUserAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
+import { sendAutomatedAppointmentEmail } from "./src/lib/emailService.ts";
 import { TAMIL_NADU_HOSPITALS } from "./src/data/tamilNaduHospitals.ts";
 import { MOCK_DOCTORS } from "./src/data/doctors.ts";
 
@@ -72,6 +73,13 @@ app.post("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
     
     const data = { ...req.body, userId: uid };
     const appointment = await createAppointment(data);
+    
+    // Trigger automated email via Nodemailer
+    if (req.user?.email) {
+      // Run asynchronously in the background so it doesn't block the API response
+      sendAutomatedAppointmentEmail(req.user.email, appointment).catch(console.error);
+    }
+
     res.json({ success: true, appointment });
   } catch (error: any) {
     console.error("Booking error:", error);
@@ -97,8 +105,8 @@ app.put("/api/appointments/:id/cancel", requireAuth, async (req: AuthRequest, re
     const uid = req.user?.uid;
     if (!uid) throw new Error("No user ID");
     
-    const appointmentId = parseInt(req.params.id, 10);
-    if (isNaN(appointmentId)) throw new Error("Invalid appointment ID");
+    const appointmentId = req.params.id;
+    if (!appointmentId) throw new Error("Invalid appointment ID");
 
     const appointment = await updateAppointmentStatus(appointmentId, uid, 'cancelled');
     res.json({ success: true, appointment });

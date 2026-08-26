@@ -41,7 +41,7 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
     fetchAppointments();
   }, []);
 
-  const handleCancel = async (id: number) => {
+  const handleCancel = async (id: string) => {
     if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
     
     try {
