@@ -41,7 +41,7 @@ export function FAQ() {
           <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h3>
         </div>
 
-        <Accordion type="single" collapsible className="w-full space-y-4">
+        <Accordion className="w-full space-y-4">
           {faqs.map((faq, i) => (
             <AccordionItem key={i} value={`item-${i}`} className="border border-gray-100 bg-gray-50/50 rounded-2xl px-6 data-[state=open]:bg-white data-[state=open]:shadow-md transition-all">
               <AccordionTrigger className="text-left text-lg font-semibold text-gray-900 hover:no-underline py-6">

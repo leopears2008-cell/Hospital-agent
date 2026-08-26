@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Stethoscope, Menu, X, User } from 'lucide-react';
+import { Stethoscope, Menu, X, User, LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signInWithGoogle, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,10 +49,28 @@ export function Navbar() {
               ))}
             </ul>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" className="text-gray-700 font-medium hidden xl:flex gap-2">
-                <User className="w-4 h-4" />
-                Patient Login
-              </Button>
+              {user ? (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt={user.displayName || 'User'} className="w-8 h-8 rounded-full border border-gray-200" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                        {user.email?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-sm font-medium text-gray-700 hidden xl:block">{user.displayName || 'Patient'}</span>
+                  </div>
+                  <Button variant="ghost" onClick={logout} className="text-gray-700 hover:text-red-600 hover:bg-red-50 p-2">
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="ghost" onClick={signInWithGoogle} className="text-gray-700 font-medium hidden xl:flex gap-2 hover:bg-blue-50 hover:text-blue-600">
+                  <User className="w-4 h-4" />
+                  Patient Login
+                </Button>
+              )}
               <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
                 Book Appointment
               </Button>
@@ -84,10 +104,31 @@ export function Navbar() {
             ))}
           </ul>
           <div className="flex flex-col gap-3 pt-4 border-t border-gray-100">
-            <Button variant="outline" className="w-full justify-center gap-2 h-12 text-base">
-              <User className="w-4 h-4" />
-              Patient Login
-            </Button>
+            {user ? (
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.displayName || 'User'} className="w-10 h-10 rounded-full" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">{user.displayName || 'Patient'}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="text-red-600 hover:bg-red-50">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button variant="outline" onClick={() => { signInWithGoogle(); setIsMobileMenuOpen(false); }} className="w-full justify-center gap-2 h-12 text-base hover:bg-blue-50 hover:text-blue-600 border-gray-200">
+                <User className="w-4 h-4" />
+                Patient Login
+              </Button>
+            )}
             <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700 h-12 text-base rounded-xl shadow-md">
               Book Appointment
             </Button>
