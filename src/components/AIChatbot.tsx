@@ -37,7 +37,11 @@ const LANGUAGES: Language[] = [
   { name: 'മലയാളം', value: 'Malayalam', speechCode: 'ml-IN' },
 ];
 
-export default function AIChatbot() {
+interface AIChatbotProps {
+  onAction?: (action: any) => void;
+}
+
+export default function AIChatbot({ onAction }: AIChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'symptom'>('chat');
 

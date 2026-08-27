@@ -9,7 +9,7 @@ import { HospitalModal } from './components/HospitalModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { AuthModal } from './components/AuthModal';
 import { UserAppointmentsModal } from './components/UserAppointmentsModal';
-import { LoginPage } from './components/LoginPage';
+import { LandingPage } from './components/LandingPage';
 import AIChatbot from './components/AIChatbot';
 import { SideMenu } from './components/SideMenu';
 import { Dashboard } from './components/Dashboard';
@@ -34,6 +34,26 @@ export default function App() {
   const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+
+  const handleAiAction = (action: any) => {
+    if (!action) return;
+    switch (action.type) {
+      case 'find_doctors':
+      case 'book_appointment':
+        setViewMode('doctors');
+        break;
+      case 'find_hospitals':
+        setViewMode('list');
+        if (action.payload) {
+          setFilters(prev => ({
+            ...prev,
+            district: action.payload.district || prev.district,
+            specialty: action.payload.specialty || prev.specialty
+          }));
+        }
+        break;
+    }
+  };
   const [viewMode, setViewMode] = useState<'dashboard' | 'split' | 'map' | 'list' | 'doctors' | 'admin'>('dashboard');
   const [savedHospitalIds, setSavedHospitalIds] = useState<string[]>([]);
 
@@ -233,7 +253,21 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <LoginPage onLoginSuccess={setCurrentUser} />;
+    return (
+      <>
+        <LandingPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+        {authModalMode && (
+          <AuthModal
+            initialMode={authModalMode}
+            onClose={() => setAuthModalMode(null)}
+            onLoginSuccess={(user) => {
+              setCurrentUser(user);
+              setAuthModalMode(null);
+            }}
+          />
+        )}
+      </>
+    );
   }
 
   return (
@@ -352,7 +386,7 @@ export default function App() {
       )}
 
       {/* Floating AI Chatbot */}
-      <AIChatbot />
+      <AIChatbot onAction={handleAiAction} />
 
       {/* Side Menu with Tools */}
       <SideMenu 
