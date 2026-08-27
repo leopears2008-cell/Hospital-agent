@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Mail, RefreshCw } from 'lucide-react';
 import { AppointmentTableSkeleton } from './Skeletons';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { TAMIL_NADU_HOSPITALS } from '../data/tamilNaduHospitals';
 import { sendEmail } from '../lib/gmail';
 
@@ -18,19 +19,14 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
     try {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error("Authentication required");
-      const token = await firebaseUser.getIdToken();
-      const res = await fetch('/api/appointments', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
       
-      if (res.ok && data.success) {
-        setAppointments(data.appointments);
-      } else {
-        throw new Error(data.error || "Failed to load appointments");
-      }
+      const q = query(collection(db, 'appointments'), where('userId', '==', firebaseUser.uid));
+      const snapshot = await getDocs(q);
+      const appts: any[] = [];
+      snapshot.forEach(d => appts.push({ id: d.id, ...d.data() }));
+      appts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      setAppointments(appts);
     } catch (err: any) {
       setError(err.message);
     } finally {

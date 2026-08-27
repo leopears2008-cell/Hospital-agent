@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Activity, Thermometer, HeartPulse, Stethoscope, Phone, Save, TrendingUp, User as UserIcon, LogOut } from 'lucide-react';
+import { X, Activity, Thermometer, HeartPulse, Stethoscope, Phone, Save, TrendingUp, User as UserIcon, LogOut, LayoutDashboard, Settings } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { User } from '../types';
 
@@ -8,9 +8,10 @@ interface SideMenuProps {
   onClose: () => void;
   currentUser: User | null;
   onLogout: () => void;
+  onNavigate?: (mode: string) => void;
 }
 
-export function SideMenu({ isOpen, onClose, currentUser, onLogout }: SideMenuProps) {
+export function SideMenu({ isOpen, onClose, currentUser, onLogout, onNavigate }: SideMenuProps) {
   const [height, setHeight] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
   const [bmiResult, setBmiResult] = useState<number | null>(null);
@@ -95,23 +96,67 @@ export function SideMenu({ isOpen, onClose, currentUser, onLogout }: SideMenuPro
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {/* User Profile / Logout section at top */}
           {currentUser && (
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
-                  <UserIcon className="w-5 h-5" />
+            <div className="space-y-2">
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{currentUser.name}</p>
+                    <p className="text-xs text-slate-500">{currentUser.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800">{currentUser.name}</p>
-                  <p className="text-xs text-slate-500">{currentUser.email}</p>
-                </div>
+                <button 
+                  onClick={onLogout}
+                  className="p-2 text-rose-500 hover:bg-rose-100 rounded-full transition-colors flex items-center justify-center"
+                  title="Log out"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
               </div>
-              <button 
-                onClick={onLogout}
-                className="p-2 text-rose-500 hover:bg-rose-100 rounded-full transition-colors flex items-center justify-center"
-                title="Log out"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
+              
+              {/* Role-based Navigation Links */}
+              {(currentUser.email === 'leopears2008@gmail.com' || currentUser.role === 'doctor') && (
+                <div className="bg-slate-50 rounded border border-slate-200 p-2 space-y-1">
+                  <button
+                    onClick={() => {
+                      if (onNavigate) onNavigate('dashboard');
+                      onClose();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-slate-500" />
+                    Patient Dashboard
+                  </button>
+                  
+                  {currentUser.email === 'leopears2008@gmail.com' && (
+                    <button
+                      onClick={() => {
+                        if (onNavigate) onNavigate('admin');
+                        onClose();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-blue-600" />
+                      Admin Panel
+                    </button>
+                  )}
+                  
+                  {currentUser.role === 'doctor' && (
+                    <button
+                      onClick={() => {
+                        if (onNavigate) onNavigate('doctorDashboard');
+                        onClose();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md transition-colors"
+                    >
+                      <Stethoscope className="w-4 h-4 text-emerald-600" />
+                      Doctor Portal
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

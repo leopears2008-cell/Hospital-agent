@@ -15,7 +15,7 @@ export function LandingPage({ onOpenAuth }: LandingPageProps) {
               <div className="w-10 h-10 bg-blue-900 rounded-xl flex items-center justify-center shadow-lg">
                 <HeartPulse className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-black text-slate-900 tracking-tight">Sylvan<span className="text-blue-700">Care</span></span>
+              <span className="text-2xl font-black text-slate-900 tracking-tight">TN <span className="text-blue-700">sevai</span></span>
             </div>
             <div className="hidden md:flex items-center gap-8 font-medium text-slate-600">
               <a href="#services" className="hover:text-blue-700 transition-colors">Services</a>
@@ -174,7 +174,7 @@ export function LandingPage({ onOpenAuth }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
             <HeartPulse className="w-6 h-6 text-blue-500" />
-            <span className="text-xl font-black text-white tracking-tight">SylvanCare</span>
+            <span className="text-xl font-black text-white tracking-tight">TN sevai</span>
           </div>
           <p className="mb-6 max-w-md mx-auto">Providing intelligent, AI-powered healthcare solutions to connect patients with top medical professionals seamlessly.</p>
           <div className="flex justify-center gap-6 text-sm">
@@ -183,7 +183,7 @@ export function LandingPage({ onOpenAuth }: LandingPageProps) {
             <a href="#" className="hover:text-white transition-colors">Contact Support</a>
           </div>
           <div className="mt-8 text-xs text-slate-600">
-            &copy; {new Date().getFullYear()} SylvanCare Platform. All rights reserved. Not intended for emergency diagnosis.
+            &copy; {new Date().getFullYear()} TN sevai Platform. All rights reserved. Not intended for emergency diagnosis.
           </div>
         </div>
       </footer>

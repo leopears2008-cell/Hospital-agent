@@ -129,7 +129,7 @@ export function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }: Au
             {isSignup ? 'Create an Account' : 'Welcome Back'}
           </h2>
           <p className="text-center text-slate-500 font-medium mb-8">
-            {isSignup ? 'Join SylvanCare for premium healthcare management.' : 'Sign in to access your dashboard.'}
+            {isSignup ? 'Join TN sevai for premium healthcare management.' : 'Sign in to access your dashboard.'}
           </p>
 
           {error && (

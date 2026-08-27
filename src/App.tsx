@@ -1,4 +1,5 @@
-import { auth } from './lib/firebase';
+import { auth, db } from './lib/firebase';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useState, useMemo, useEffect } from 'react';
 import { TAMIL_NADU_HOSPITALS } from './data/tamilNaduHospitals';
 import { Hospital, SearchFilters, User } from './types';
@@ -17,7 +18,6 @@ import { DoctorDirectory } from './components/DoctorDirectory';
 import { AdminDashboard } from './components/AdminDashboard';
 import { NotFound } from './components/NotFound';
 import { DoctorDashboard } from './components/DoctorDashboard';
-import { NotFound } from "./components/NotFound";
 
 import { EmergencyModal } from './components/EmergencyModal';
 
@@ -104,30 +104,40 @@ export default function App() {
             role: 'patient'
           });
           try {
-            const token = await user.getIdToken();
-            const res = await fetch('/api/auth/sync', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                email: user.email,
-                name: user.displayName || user.email?.split('@')[0] || 'User'
-              })
-            });
-            const data = await res.json();
-            if (data.user && data.user.role) {
-              setCurrentUser({
-                id: user.uid,
-                name: user.displayName || user.email?.split('@')[0] || 'User',
-                email: user.email || '',
-                role: data.user.role,
-                doctorId: data.user.doctorId
+            const userRef = doc(db, 'users', user.uid);
+            const docSnap = await getDoc(userRef);
+            let role = 'patient';
+            let doctorId = undefined;
+            const name = user.displayName || user.email?.split('@')[0] || 'User';
+            const email = user.email || '';
+
+            if (!docSnap.exists()) {
+              role = email === 'leopears2008@gmail.com' ? 'admin' :
+                     (email.startsWith('dr.') || email === 'doctor@example.com') ? 'doctor' : 'patient';
+              await setDoc(userRef, {
+                uid: user.uid,
+                email,
+                name,
+                role,
+                createdAt: Date.now()
               });
-              if (data.user.role === 'admin') setViewMode('admin');
-              else if (data.user.role === 'doctor') setViewMode('doctorDashboard');
+            } else {
+              const userData = docSnap.data();
+              role = userData.role || 'patient';
+              doctorId = userData.doctorId;
+              await updateDoc(userRef, { email, name });
             }
+
+            setCurrentUser({
+              id: user.uid,
+              name,
+              email,
+              role: role as any,
+              doctorId
+            });
+            
+            if (role === 'admin' && email === 'leopears2008@gmail.com') setViewMode('admin');
+            else if (role === 'doctor') setViewMode('doctorDashboard');
           } catch (err) {
             console.error("Failed to sync user with database:", err);
           }
@@ -282,7 +292,7 @@ export default function App() {
 
   if (currentPath !== '/') {
     return (
-      <NotFound onReturnHome={() => {
+      <NotFound onGoHome={() => {
         window.history.pushState({}, '', '/');
         setCurrentPath('/');
       }} />
@@ -348,7 +358,7 @@ export default function App() {
           />
         )}
 
-        {viewMode === 'admin' && currentUser?.role === 'admin' && (
+        {viewMode === 'admin' && currentUser?.email === 'leopears2008@gmail.com' && (
           <AdminDashboard 
             appointments={[]} 
             hospitals={hospitals} 
@@ -445,6 +455,7 @@ export default function App() {
         onClose={() => setIsSideMenuOpen(false)} 
         currentUser={currentUser}
         onLogout={handleLogout}
+        onNavigate={(mode) => setViewMode(mode as any)}
       />
 
       {/* Emergency Mode Modal */}

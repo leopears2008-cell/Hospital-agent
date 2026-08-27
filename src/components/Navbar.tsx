@@ -6,8 +6,8 @@ import { NotificationDropdown } from './NotificationDropdown';
 interface NavbarProps {
   onOpenSideMenu: () => void;
   onOpenAiAssistant: () => void;
-  viewMode: 'dashboard' | 'split' | 'map' | 'list' | 'doctors' | 'admin';
-  setViewMode: (mode: 'dashboard' | 'split' | 'map' | 'list' | 'doctors' | 'admin') => void;
+  viewMode: string;
+  setViewMode: (mode: any) => void;
   totalHospitals: number;
   currentUser: User | null;
   onOpenAuth: (mode: 'login' | 'signup') => void;
@@ -86,22 +86,7 @@ export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMod
             >
               Map
             </button>
-            {currentUser?.role === 'admin' && (
-              <button
-                onClick={() => setViewMode('admin')}
-                className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'admin' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-blue-600'}`}
-              >
-                Admin Panel
-              </button>
-            )}
-            {currentUser?.role === 'doctor' && (
-              <button
-                onClick={() => setViewMode('doctorDashboard')}
-                className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'doctorDashboard' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-blue-600'}`}
-              >
-                Doctor Portal
-              </button>
-            )}
+            
           </div>
 
           {/* AI Care Advisor Button */}

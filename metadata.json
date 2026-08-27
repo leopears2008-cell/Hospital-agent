@@ -1,5 +1,5 @@
 {
-  "name": "Leo AI Chat",
+  "name": "TN sevai",
   "description": "Comprehensive search and AI-powered healthcare directory for hospitals across Tamil Nadu with Google Maps integration and Gemini medical triage guidance.",
   "requestFramePermissions": [
     "geolocation",

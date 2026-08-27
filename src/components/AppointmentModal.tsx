@@ -1,7 +1,8 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { X, Calendar, Clock, User as UserIcon, FileText, CheckCircle, ChevronRight, ChevronLeft, MapPin, Search, QrCode } from 'lucide-react';
 import { Hospital, User, Doctor } from '../types';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { sendEmail } from '../lib/gmail';
 import { MOCK_DOCTORS } from '../data/doctors';
 
@@ -63,33 +64,25 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
     try {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error("Authentication required");
-      const token = await firebaseUser.getIdToken();
-
-      const response = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          hospitalId: hospital.id,
-          doctorId,
-          department,
-          patientName,
-          patientAge: parseInt(patientAge),
-          patientPhone,
-          date,
-          time,
-          symptoms,
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to book appointment.');
-      }
       
-      const aptId = data.appointment?.id || `APT-${Math.floor(Math.random() * 100000)}`;
+      const appointmentData = {
+        hospitalId: hospital.id,
+        doctorId,
+        department,
+        userId: firebaseUser.uid,
+        patientName,
+        patientAge: parseInt(patientAge),
+        patientPhone,
+        date,
+        time,
+        status: 'pending',
+        symptoms,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      
+      const docRef = await addDoc(collection(db, 'appointments'), appointmentData);
+      const aptId = docRef.id;
       setAppointmentId(aptId);
       setSuccess(true);
       

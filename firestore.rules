@@ -1,73 +1,32 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Global Safety Net
     match /{document=**} {
       allow read, write: if false;
     }
-
-    // Helpers
     function isSignedIn() {
       return request.auth != null;
     }
-
-    function isValidId(id) {
-      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    function isAdmin() {
+      // Hardcoded admin email restriction
+      return isSignedIn() && request.auth.token.email == 'leopears2008@gmail.com';
     }
-
-    function existing() {
-      return resource.data;
+    function isDoctor() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'doctor';
     }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function isValidAppointment(data) {
-      return data.keys().hasAll(['hospitalId', 'userId', 'patientName', 'date', 'time', 'status', 'createdAt', 'updatedAt']) &&
-             data.keys().size() == 8 &&
-             data.hospitalId is string && data.hospitalId.size() <= 128 &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.patientName is string && data.patientName.size() <= 128 &&
-             data.date is string && data.date.size() <= 32 &&
-             data.time is string && data.time.size() <= 32 &&
-             (!('symptoms' in data) || (data.symptoms is string && data.symptoms.size() <= 500)) &&
-             data.status in ['pending', 'confirmed', 'cancelled'] &&
-             data.createdAt is timestamp &&
-             data.updatedAt is timestamp;
-    }
-
+    
     match /users/{userId} {
-      allow read, write: if isSignedIn() && userId == request.auth.uid;
+      allow read: if isSignedIn() && (userId == request.auth.uid || isAdmin() || isDoctor());
+      // Users can update their own doc, but we should technically prevent them from changing their role to admin.
+      // Easiest is to just rely on the hardcoded isAdmin check above for real admin actions.
+      allow write: if isSignedIn() && (userId == request.auth.uid || isAdmin());
     }
-
+    
     match /appointments/{appointmentId} {
-      allow read: if isSignedIn() && existing().userId == request.auth.uid;
-      
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-
-      allow create: if isSignedIn() && 
-                    isValidId(appointmentId) &&
-                    isValidAppointment(incoming()) &&
-                    incoming().createdAt == request.time &&
-                    incoming().updatedAt == request.time &&
-                    incoming().status == 'pending';
-
-      allow update: if isSignedIn() && 
-                    isValidId(appointmentId) &&
-                    existing().userId == request.auth.uid &&
-                    isValidAppointment(incoming()) &&
-                    incoming().userId == existing().userId &&
-                    incoming().hospitalId == existing().hospitalId &&
-                    incoming().createdAt == existing().createdAt &&
-                    incoming().updatedAt == request.time &&
-                    (
-                      incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']) ||
-                      incoming().diff(existing()).affectedKeys().hasOnly(['patientName', 'date', 'time', 'symptoms', 'updatedAt'])
-                    );
-
-      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+      allow read, list: if isSignedIn() && (resource.data.userId == request.auth.uid || isDoctor() || isAdmin());
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isDoctor() || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
   }
 }

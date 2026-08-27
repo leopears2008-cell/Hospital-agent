@@ -5,6 +5,8 @@ import {
 } from 'recharts';
 import { Users, Calendar as CalendarIcon, Activity, TrendingUp } from 'lucide-react';
 import { Appointment, Hospital } from '../types';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 interface AdminDashboardProps {
   appointments: Appointment[];
@@ -12,13 +14,29 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({ appointments, hospitals }: AdminDashboardProps) {
-  // Mock data for charts if DB is empty
   const [stats, setStats] = useState({
-    totalUsers: 1245,
-    totalAppointments: 384,
+    totalUsers: 0,
+    totalAppointments: 0,
     activeHospitals: hospitals.length,
-    revenue: 45000
+    revenue: 0
   });
+
+  useEffect(() => {
+    // Real-time listener for users
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      setStats(prev => ({ ...prev, totalUsers: snapshot.size }));
+    });
+
+    // Real-time listener for appointments
+    const unsubscribeAppointments = onSnapshot(collection(db, 'appointments'), (snapshot) => {
+      setStats(prev => ({ ...prev, totalAppointments: snapshot.size }));
+    });
+
+    return () => {
+      unsubscribeUsers();
+      unsubscribeAppointments();
+    };
+  }, []);
 
   const appointmentData = [
     { name: 'Jan', appointments: 40 },

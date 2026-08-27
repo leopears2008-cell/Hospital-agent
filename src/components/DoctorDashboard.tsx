@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, User, CheckCircle, XCircle } from 'lucide-react';
+import { db, auth } from '../lib/firebase';
+import { collection, query, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Appointment, User as AppUser } from '../types';
 
 interface DoctorDashboardProps {
@@ -16,16 +18,12 @@ export function DoctorDashboard({ currentUser }: DoctorDashboardProps) {
 
   const fetchAppointments = async () => {
     try {
-      const token = await (window as any).auth?.currentUser?.getIdToken();
-      if (!token) return;
-      
-      const res = await fetch('/api/doctor/appointments', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setAppointments(data.appointments);
-      }
+      const q = query(collection(db, 'appointments'));
+      const snapshot = await getDocs(q);
+      const appts: any[] = [];
+      snapshot.forEach(d => appts.push({ id: d.id, ...d.data() }));
+      appts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setAppointments(appts);
     } catch (err) {
       console.error(err);
     } finally {
@@ -35,14 +33,10 @@ export function DoctorDashboard({ currentUser }: DoctorDashboardProps) {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      const token = await (window as any).auth?.currentUser?.getIdToken();
-      await fetch(`/api/appointments/${id}/status`, {
-        method: 'PUT',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
+      const apptRef = doc(db, 'appointments', id);
+      await updateDoc(apptRef, {
+        status,
+        updatedAt: serverTimestamp()
       });
       fetchAppointments();
     } catch (err) {
