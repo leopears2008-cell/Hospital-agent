@@ -15,10 +15,22 @@ import { SideMenu } from './components/SideMenu';
 import { Dashboard } from './components/Dashboard';
 import { DoctorDirectory } from './components/DoctorDirectory';
 import { AdminDashboard } from './components/AdminDashboard';
+import { NotFound } from "./components/NotFound";
 
 import { EmergencyModal } from './components/EmergencyModal';
 
 export default function App() {
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
   const [allHospitals] = useState<Hospital[]>(TAMIL_NADU_HOSPITALS);
   const [hospitals] = useState<Hospital[]>(TAMIL_NADU_HOSPITALS);
   const [filters, setFilters] = useState<SearchFilters>({
@@ -243,6 +255,15 @@ export default function App() {
       prev.includes(hospital.id) ? prev.filter(id => id !== hospital.id) : [...prev, hospital.id]
     );
   };
+
+  if (currentPath !== '/') {
+    return (
+      <NotFound onReturnHome={() => {
+        window.history.pushState({}, '', '/');
+        setCurrentPath('/');
+      }} />
+    );
+  }
 
   if (loadingAuth) {
     return (
