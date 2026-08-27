@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { auth } from '../lib/firebase';
 import { Hospital, User, Appointment } from '../types';
 import { Search, Calendar, HeartPulse, Activity, Bell, ChevronRight, Clock, AlertTriangle, UserPlus } from 'lucide-react';
 
@@ -12,20 +13,32 @@ interface DashboardProps {
 }
 
 export function Dashboard({ currentUser, hospitals, onOpenNavigation, onOpenAi, onOpenAppointments, onEmergency }: DashboardProps) {
-  // Mock data for demonstration
-  const upcomingAppointment: Appointment | null = {
-    id: 'mock-app-1',
-    hospitalId: hospitals[0]?.id || '',
-    userId: currentUser.id,
-    patientName: currentUser.name,
-    date: '2026-08-18',
-    time: '10:30 AM',
-    status: 'confirmed',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    department: 'Cardiology',
-    doctorId: 'dr-mock-1'
-  };
+  const [upcomingAppointment, setUpcomingAppointment] = useState<Appointment | null>(null);
+  const [loadingAppt, setLoadingAppt] = useState(true);
+
+  useEffect(() => {
+    const fetchUpcoming = async () => {
+      try {
+        const firebaseUser = auth.currentUser;
+        if (!firebaseUser) return;
+        const token = await firebaseUser.getIdToken();
+        const res = await fetch('/api/appointments', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success && data.appointments.length > 0) {
+          // Find closest future appointment, or just the latest pending/confirmed
+          const upcoming = data.appointments.find((a: any) => a.status === 'confirmed' || a.status === 'pending');
+          setUpcomingAppointment(upcoming || null);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingAppt(false);
+      }
+    };
+    fetchUpcoming();
+  }, [currentUser]);
 
   const recentlyViewed = hospitals.slice(0, 3);
   const nearbyHospitals = hospitals.slice(3, 6); // Mocked as nearby
@@ -82,7 +95,24 @@ export function Dashboard({ currentUser, hospitals, onOpenNavigation, onOpenAi, 
           <div className="lg:col-span-2 space-y-8">
             
             {/* Upcoming Appointment */}
-            {upcomingAppointment && (
+            {loadingAppt ? (
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 animate-pulse">
+                <div className="h-6 w-1/3 bg-slate-200 rounded mb-6" />
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <div className="h-4 w-24 bg-slate-200 rounded mb-2" />
+                    <div className="h-5 w-48 bg-slate-200 rounded mb-6" />
+                    <div className="h-4 w-24 bg-slate-200 rounded mb-2" />
+                    <div className="h-5 w-32 bg-slate-200 rounded" />
+                  </div>
+                  <div>
+                    <div className="h-4 w-24 bg-slate-200 rounded mb-2" />
+                    <div className="h-5 w-48 bg-slate-200 rounded mb-6" />
+                    <div className="h-10 w-full bg-slate-200 rounded-xl mt-6" />
+                  </div>
+                </div>
+              </div>
+            ) : upcomingAppointment && (
               <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-1 shadow-lg">
                 <div className="bg-white/10 backdrop-blur-md rounded-[22px] p-6 text-white">
                   <div className="flex justify-between items-start mb-6">
@@ -90,7 +120,7 @@ export function Dashboard({ currentUser, hospitals, onOpenNavigation, onOpenAi, 
                       <Calendar className="w-5 h-5 opacity-80" />
                       Upcoming Appointment
                     </h2>
-                    <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider">Confirmed</span>
+                    <span className={`bg-white/20 px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider ${upcomingAppointment.status === 'pending' ? 'text-amber-200' : 'text-white'}`}>{upcomingAppointment.status}</span>
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-6 items-end">

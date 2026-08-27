@@ -1,6 +1,7 @@
 import { Shield, Sparkles, PhoneCall, LogOut, User as UserIcon, LogIn, UserPlus, Menu } from 'lucide-react';
 import { User } from '../types';
 import { EmergencyAlertsToggle } from './EmergencyAlertsToggle';
+import { NotificationDropdown } from './NotificationDropdown';
 
 interface NavbarProps {
   onOpenSideMenu: () => void;
@@ -90,7 +91,15 @@ export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMod
                 onClick={() => setViewMode('admin')}
                 className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'admin' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-blue-600'}`}
               >
-                Admin
+                Admin Panel
+              </button>
+            )}
+            {currentUser?.role === 'doctor' && (
+              <button
+                onClick={() => setViewMode('doctorDashboard')}
+                className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'doctorDashboard' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-blue-600'}`}
+              >
+                Doctor Portal
               </button>
             )}
           </div>
@@ -108,6 +117,7 @@ export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMod
           <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
             {currentUser ? (
               <div className="flex items-center gap-3">
+                <NotificationDropdown />
                 <button
                   onClick={onOpenAppointments}
                   className="flex items-center gap-2 bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded border border-slate-200 transition-colors cursor-pointer"

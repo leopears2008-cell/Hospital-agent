@@ -4,7 +4,8 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
-import { createAppointment, getUserAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
+import { createAppointment, getUserAppointments, getDoctorAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
+import { getUserRole } from "./src/db/users.ts";
 import { sendAutomatedAppointmentEmail } from "./src/lib/emailService.ts";
 import { TAMIL_NADU_HOSPITALS } from "./src/data/tamilNaduHospitals.ts";
 import { MOCK_DOCTORS } from "./src/data/doctors.ts";
@@ -97,6 +98,36 @@ app.get("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
   } catch (error: any) {
     console.error("Fetch appointments error:", error);
     res.status(500).json({ success: false, error: error.message || "Failed to fetch appointments" });
+  }
+});
+
+
+app.get("/api/doctor/appointments", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) throw new Error("No user ID");
+    
+    // We assume the user has a doctorId in their doc or uses uid as doctorId
+    // For this prototype, let's just query by uid
+    const appointments = await getDoctorAppointments(uid);
+    res.json({ success: true, appointments });
+  } catch (error: any) {
+    console.error("Fetch doctor appointments error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch appointments" });
+  }
+});
+
+app.put("/api/appointments/:id/status", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.user?.uid;
+    const { status } = req.body;
+    if (!uid) throw new Error("No user ID");
+    
+    const appointment = await updateAppointmentStatus(req.params.id, uid, status);
+    res.json({ success: true, appointment });
+  } catch (error: any) {
+    console.error("Update appointment error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to update appointment" });
   }
 });
 

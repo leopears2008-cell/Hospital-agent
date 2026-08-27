@@ -15,6 +15,8 @@ import { SideMenu } from './components/SideMenu';
 import { Dashboard } from './components/Dashboard';
 import { DoctorDirectory } from './components/DoctorDirectory';
 import { AdminDashboard } from './components/AdminDashboard';
+import { NotFound } from './components/NotFound';
+import { DoctorDashboard } from './components/DoctorDashboard';
 import { NotFound } from "./components/NotFound";
 
 import { EmergencyModal } from './components/EmergencyModal';
@@ -66,7 +68,16 @@ export default function App() {
         break;
     }
   };
-  const [viewMode, setViewMode] = useState<'dashboard' | 'split' | 'map' | 'list' | 'doctors' | 'admin'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'split' | 'map' | 'list' | 'doctors' | 'admin' | 'doctorDashboard' | '404'>(window.location.pathname === '/' ? 'dashboard' : '404');
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname === '/') setViewMode('dashboard');
+      else setViewMode('404');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [savedHospitalIds, setSavedHospitalIds] = useState<string[]>([]);
 
   // Geolocation and OSRM Routing states
@@ -85,15 +96,16 @@ export default function App() {
     import('./lib/firebase').then(({ auth }) => {
       const unsubscribe = auth.onAuthStateChanged(async (user) => {
         if (user) {
+          // Temporarily set while fetching real role
           setCurrentUser({
             id: user.uid,
             name: user.displayName || user.email?.split('@')[0] || 'User',
             email: user.email || '',
-            role: user.email === 'leopears2008@gmail.com' ? 'admin' : 'user'
+            role: 'patient'
           });
           try {
             const token = await user.getIdToken();
-            await fetch('/api/auth/sync', {
+            const res = await fetch('/api/auth/sync', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -104,6 +116,18 @@ export default function App() {
                 name: user.displayName || user.email?.split('@')[0] || 'User'
               })
             });
+            const data = await res.json();
+            if (data.user && data.user.role) {
+              setCurrentUser({
+                id: user.uid,
+                name: user.displayName || user.email?.split('@')[0] || 'User',
+                email: user.email || '',
+                role: data.user.role,
+                doctorId: data.user.doctorId
+              });
+              if (data.user.role === 'admin') setViewMode('admin');
+              else if (data.user.role === 'doctor') setViewMode('doctorDashboard');
+            }
           } catch (err) {
             console.error("Failed to sync user with database:", err);
           }
@@ -329,6 +353,12 @@ export default function App() {
             appointments={[]} 
             hospitals={hospitals} 
           />
+        )}
+        {viewMode === 'doctorDashboard' && currentUser?.role === 'doctor' && (
+          <DoctorDashboard currentUser={currentUser} />
+        )}
+        {viewMode === '404' && (
+          <NotFound onGoHome={() => setViewMode('dashboard')} />
         )}
 
         {/* List View / Split View Sidebar */}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Mail, RefreshCw } from 'lucide-react';
+import { AppointmentTableSkeleton } from './Skeletons';
 import { auth } from '../lib/firebase';
 import { TAMIL_NADU_HOSPITALS } from '../data/tamilNaduHospitals';
 import { sendEmail } from '../lib/gmail';

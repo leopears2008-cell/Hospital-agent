@@ -2,7 +2,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role?: 'admin' | 'user';
+  role?: 'admin' | 'patient' | 'doctor';
+  doctorId?: string;
 }
 
 export interface Review {
@@ -83,4 +84,16 @@ export interface SearchFilters {
   specialty: string;
   hospitalType: string;
   emergencyOnly: boolean;
+}
+
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  timestamp: number;
+  read: boolean;
+  type: 'appointment' | 'medical' | 'system';
+  actionUrl?: string;
 }
