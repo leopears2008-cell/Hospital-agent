@@ -3,6 +3,8 @@ import { X, Shield, Mail, Lock, User as UserIcon, LogIn, UserPlus, Eye, EyeOff }
 import { User } from '../types';
 import { auth, googleSignIn } from '../lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
+import { db } from '../lib/firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 interface AuthModalProps {
   initialMode?: 'login' | 'signup';
@@ -40,6 +42,13 @@ export function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }: Au
         }
         const credential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(credential.user, { displayName: name });
+        // Create user document with explicit patient role
+        await setDoc(doc(db, 'users', credential.user.uid), {
+          name: name,
+          email: credential.user.email,
+          role: 'patient',
+          createdAt: serverTimestamp()
+        });
         onLoginSuccess({
           id: credential.user.uid,
           name: name,
@@ -74,15 +83,33 @@ export function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }: Au
       setError('');
       setLoading(true);
       const credential = await googleSignIn();
-      onLoginSuccess({
-        id: credential.user.uid,
-        name: credential.user.displayName || credential.user.email?.split('@')[0] || '',
-        email: credential.user.email || ''
-      });
-      onClose();
+      if (credential) {
+        // Ensure user document exists for Google login
+        const userRef = doc(db, 'users', credential.user.uid);
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            name: credential.user.displayName || credential.user.email?.split('@')[0] || '',
+            email: credential.user.email || '',
+            role: 'patient',
+            createdAt: serverTimestamp()
+          });
+        }
+        
+        onLoginSuccess({
+          id: credential.user.uid,
+          name: credential.user.displayName || credential.user.email?.split('@')[0] || '',
+          email: credential.user.email || ''
+        });
+        onClose();
+      }
     } catch (err: any) {
-      console.error('Google auth error:', err);
-      setError(err.message || 'Google authentication failed.');
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        setError(''); // Silently ignore user cancellations
+      } else {
+        console.error('Google auth error:', err);
+        setError(err.message || 'Google authentication failed.');
+      }
     } finally {
       setLoading(false);
     }

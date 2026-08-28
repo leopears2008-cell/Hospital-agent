@@ -44,21 +44,16 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
     try {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) return;
-      const token = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/appointments/${id}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
       
-      if (res.ok && data.success) {
-        // Update local state
-        setAppointments(prev => prev.map(app => app.id === id ? { ...app, status: 'cancelled' } : app));
-      } else {
-        throw new Error(data.error || "Failed to cancel");
-      }
+      const appointmentRef = doc(db, 'appointments', id);
+      await updateDoc(appointmentRef, {
+        status: 'cancelled',
+        updatedAt: serverTimestamp()
+      });
+
+      // Update local state
+      setAppointments(prev => prev.map(app => app.id === id ? { ...app, status: 'cancelled' } : app));
+      
     } catch (err: any) {
       alert(err.message);
     }
@@ -149,8 +144,18 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
                           <X className="w-3.5 h-3.5" /> Cancelled
                         </span>
                       )}
+                      {app.status === 'completed' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+                        </span>
+                      )}
+                      {app.status === 'rejected' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          <X className="w-3.5 h-3.5" /> Rejected
+                        </span>
+                      )}
 
-                      {app.status !== 'cancelled' && (
+                      {(app.status === 'pending' || app.status === 'confirmed') && (
                         <div className="flex flex-col items-end gap-1 mt-2">
                           <button
                             onClick={() => handleSendEmail(app)}

@@ -133,7 +133,7 @@ export function SideMenu({ isOpen, onClose, currentUser, onLogout, onNavigate }:
                   {currentUser.email === 'leopears2008@gmail.com' && (
                     <button
                       onClick={() => {
-                        if (onNavigate) onNavigate('admin');
+                        window.location.href = '/admin/dashboard';
                         onClose();
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors"
