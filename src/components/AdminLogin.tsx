@@ -1,30 +1,24 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
-import { auth, db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { Shield, Lock, Eye, EyeOff } from 'lucide-react';
+import { auth, googleSignIn } from '../lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuthGuard } from '../lib/auth-guard';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const { user, role, loading: authLoading } = useAuthGuard();
+  
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          const userRef = doc(db, 'users', user.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists() && snap.data().role === 'admin') {
-            navigate('/admin/dashboard');
-          } else {
-            navigate('/');
-          }
-        } catch (err) {
-          navigate('/');
-        }
+    if (!authLoading && user) {
+      if (role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/'); // Route patients/doctors to their respective dashboards
       }
-    });
-    return () => unsub();
-  }, [navigate]);
+    }
+  }, [user, role, authLoading, navigate]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -36,17 +30,25 @@ export default function AdminLogin() {
     setError('');
     setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // Verify token/role
-      const tokenResult = await userCredential.user.getIdTokenResult();
-      // Wait, in this setup, admin role is checked by firestore rules.
-      // The prompt mentioned: "The user's role must be validated securely on the backend/database."
-      // For now, if login succeeds, we redirect. AdminApp will re-validate role from DB.
-      navigate('/admin/dashboard');
+      await signInWithEmailAndPassword(auth, email, password);
+      // Wait for useAuthGuard to handle the navigation
     } catch (err: any) {
       setError(err.message || "Failed to login as admin.");
       auth.signOut();
-    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      await googleSignIn();
+      // Wait for useAuthGuard to handle the navigation
+    } catch (err: any) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        setError('Google Sign In failed. Please try again.');
+      }
       setLoading(false);
     }
   };
@@ -99,22 +101,34 @@ export default function AdminLogin() {
             </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || authLoading}
               className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
             >
-              {loading ? 'Authenticating...' : (
+              {loading || authLoading ? 'Authenticating...' : (
                 <>
                   <Lock className="w-4 h-4" /> Secure Login
                 </>
               )}
             </button>
           </form>
-          
+
           <div className="mt-8 relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
             </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-slate-500 font-medium">Or continue with</span>
+            </div>
           </div>
+
+          <button
+            onClick={handleGoogleAuth}
+            disabled={loading || authLoading}
+            className="mt-6 w-full bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+            Google
+          </button>
           
           <div className="mt-6 text-center">
             <a 
