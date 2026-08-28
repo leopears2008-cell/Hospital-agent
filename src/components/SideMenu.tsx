@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Activity, Thermometer, HeartPulse, Stethoscope, Phone, Save, TrendingUp, User as UserIcon, LogOut, LayoutDashboard, Settings } from 'lucide-react';
+import { X, Activity, Thermometer, HeartPulse, Stethoscope, Phone, Save, TrendingUp, User as UserIcon, LogOut, LayoutDashboard, Settings , FileSearch} from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { User } from '../types';
 

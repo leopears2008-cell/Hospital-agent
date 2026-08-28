@@ -335,6 +335,13 @@ export default function PatientApp() {
         {viewMode === 'doctorDashboard' && currentUser?.role === 'doctor' && (
           <DoctorDashboard currentUser={currentUser} />
         )}
+        {viewMode === 'search' && (
+          <div className="w-full h-full p-4 md:p-6 bg-slate-100 overflow-hidden">
+             <div className="max-w-4xl mx-auto h-full">
+               <DocumentSearch hospitals={hospitals} />
+             </div>
+          </div>
+        )}
         {viewMode === '404' && (
           <NotFound onGoHome={() => setViewMode('dashboard')} />
         )}
