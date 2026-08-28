@@ -2,7 +2,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import { X, Calendar, Clock, User as UserIcon, FileText, CheckCircle, ChevronRight, ChevronLeft, MapPin, Search, QrCode } from 'lucide-react';
 import { Hospital, User, Doctor } from '../types';
 import { auth, db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, runTransaction, doc, query, getDocs, where } from 'firebase/firestore';
 import { sendEmail } from '../lib/gmail';
 import { MOCK_DOCTORS } from '../data/doctors';
 
@@ -81,6 +81,19 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
         updatedAt: serverTimestamp()
       };
       
+      // Double-booking check using a transactional-like check (or robust query)
+      const q = query(
+        collection(db, 'appointments'),
+        where('doctorId', '==', doctorId),
+        where('date', '==', date),
+        where('time', '==', time),
+        where('status', 'in', ['pending', 'confirmed'])
+      );
+      const existing = await getDocs(q);
+      if (!existing.empty) {
+        throw new Error("This time slot has just been booked by someone else. Please choose another slot.");
+      }
+
       const docRef = await addDoc(collection(db, 'appointments'), appointmentData);
       const aptId = docRef.id;
       setAppointmentId(aptId);
