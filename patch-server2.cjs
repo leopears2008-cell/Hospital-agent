@@ -1,24 +1,34 @@
 const fs = require('fs');
 let code = fs.readFileSync('server.ts', 'utf8');
 
-const regex = /systemInstruction: \`You are Leo AI, an AI Health Assistant for Tamil Nadu Hospitals\. \$\{knowledgeBaseContext\}[\s\S]*?(?=\`)/;
+const ret = `
+function retrieveKnowledgeBase(query: string) {
+  const normalizedQuery = query.toLowerCase();
+  const keywords = normalizedQuery.split(/\\s+/).filter(k => k.length > 2);
+  
+  let matchedHospitals = TAMIL_NADU_HOSPITALS.filter(h => {
+    const searchString = \`\${h.name} \${h.cityOrDistrict} \${h.specialty} \${h.address}\`.toLowerCase();
+    return keywords.some(k => searchString.includes(k));
+  });
 
-const newInstruction = `systemInstruction: \`You are Leo AI, an AI Health Assistant for Tamil Nadu Hospitals. \${knowledgeBaseContext}
-CRITICAL AI SAFETY LAYER & EMERGENCY CLASSIFIER:
-Before responding, internally classify if the user's message indicates a MEDICAL EMERGENCY (e.g., severe chest pain, severe difficulty breathing, stroke symptoms, unconsciousness, severe bleeding, seizure, severe allergic reaction). 
-If it IS an emergency:
-1. STOP normal recommendation flow.
-2. Provide urgent professional/emergency guidance.
-3. Strongly advise them to call 108 (Tamil Nadu Emergency Ambulance) immediately or go to the nearest emergency room.
-4. Do NOT attempt to diagnose or falsely reassure.
+  if (matchedHospitals.length === 0) matchedHospitals = TAMIL_NADU_HOSPITALS.slice(0, 15);
+  else if (matchedHospitals.length > 15) matchedHospitals = matchedHospitals.slice(0, 15);
 
-Instructions:
-- You are an ACTION-BASED AI. If the user wants to book an appointment, find doctors, or find hospitals, ALWAYS use the appropriate tool/function call (book_appointment, find_doctors, find_hospitals) instead of just replying with text.
-- If the user's request is informational or medical advice, provide a helpful, brief, and cautious response. 
-- NEVER claim "You have disease X." Use cautious language: "These symptoms can have several causes. A healthcare professional should evaluate you."
-- Clearly distinguish general health information, symptom guidance, and healthcare navigation.
-- If they ask about specific doctors, hospitals, or availability, answer using ONLY the internal knowledge base provided. Do not hallucinate hospitals or doctors.`;
+  let matchedDoctors = MOCK_DOCTORS.filter(d => {
+    const searchString = \`\${d.name} \${d.department} \${d.specialization}\`.toLowerCase();
+    return keywords.some(k => searchString.includes(k));
+  });
+  
+  if (matchedDoctors.length === 0) matchedDoctors = MOCK_DOCTORS.slice(0, 10);
+  else if (matchedDoctors.length > 10) matchedDoctors = matchedDoctors.slice(0, 10);
 
-code = code.replace(regex, newInstruction);
+  return \`--- INTERNAL KNOWLEDGE BASE (Tamil Nadu Hospitals & Doctors) ---\\nHOSPITALS:\\n\${JSON.stringify(matchedHospitals.map(h => ({ id: h.id, name: h.name, city: h.cityOrDistrict, specialty: h.specialty, emergency: h.emergencyAvailable, address: h.address, rating: h.rating })), null, 2)}\\nDOCTORS:\\n\${JSON.stringify(matchedDoctors.map(d => ({ id: d.id, name: d.name, department: d.department, specialization: d.specialization, fee: d.consultationFee, availableDays: d.availableDays, rating: d.rating })), null, 2)}\\n--- INSTRUCTIONS: Use the above verified internal data to answer the user's question. Do not invent hospitals or doctors that are not in this list.\`;
+}
+
+// Instantiate the agent globally
+const aiAgent = new HospitalAIAgent(process.env.GEMINI_API_KEY!);
+`;
+
+code = code.replace("// Instantiate the agent globally\nconst aiAgent = new HospitalAIAgent(process.env.GEMINI_API_KEY!);", ret);
 
 fs.writeFileSync('server.ts', code);

@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
+import { HospitalAIAgent } from "./src/lib/ai-agent.ts";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { createAppointment, getUserAppointments, getDoctorAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
@@ -9,6 +10,13 @@ import { getUserRole } from "./src/db/users.ts";
 import { sendAutomatedAppointmentEmail } from "./src/lib/emailService.ts";
 import { TAMIL_NADU_HOSPITALS } from "./src/data/tamilNaduHospitals.ts";
 import { MOCK_DOCTORS } from "./src/data/doctors.ts";
+
+
+const app = express();
+const PORT = 3000;
+
+app.use(express.json());
+
 
 function retrieveKnowledgeBase(query: string) {
   const normalizedQuery = query.toLowerCase();
@@ -19,39 +27,23 @@ function retrieveKnowledgeBase(query: string) {
     return keywords.some(k => searchString.includes(k));
   });
 
-  if (matchedHospitals.length === 0) {
-    matchedHospitals = TAMIL_NADU_HOSPITALS.slice(0, 15);
-  } else if (matchedHospitals.length > 15) {
-    matchedHospitals = matchedHospitals.slice(0, 15);
-  }
+  if (matchedHospitals.length === 0) matchedHospitals = TAMIL_NADU_HOSPITALS.slice(0, 15);
+  else if (matchedHospitals.length > 15) matchedHospitals = matchedHospitals.slice(0, 15);
 
   let matchedDoctors = MOCK_DOCTORS.filter(d => {
     const searchString = `${d.name} ${d.department} ${d.specialization}`.toLowerCase();
     return keywords.some(k => searchString.includes(k));
   });
   
-  if (matchedDoctors.length === 0) {
-    matchedDoctors = MOCK_DOCTORS.slice(0, 10);
-  } else if (matchedDoctors.length > 10) {
-    matchedDoctors = matchedDoctors.slice(0, 10);
-  }
+  if (matchedDoctors.length === 0) matchedDoctors = MOCK_DOCTORS.slice(0, 10);
+  else if (matchedDoctors.length > 10) matchedDoctors = matchedDoctors.slice(0, 10);
 
-  return `
---- INTERNAL KNOWLEDGE BASE (Tamil Nadu Hospitals & Doctors) ---
-HOSPITALS:
-${JSON.stringify(matchedHospitals.map(h => ({ id: h.id, name: h.name, city: h.cityOrDistrict, specialty: h.specialty, emergency: h.emergencyAvailable, address: h.address, rating: h.rating })), null, 2)}
-
-DOCTORS:
-${JSON.stringify(matchedDoctors.map(d => ({ id: d.id, name: d.name, department: d.department, specialization: d.specialization, fee: d.consultationFee, availableDays: d.availableDays, rating: d.rating })), null, 2)}
---- 
-INSTRUCTIONS: Use the above verified internal data to answer the user's question. Do not invent hospitals or doctors that are not in this list.
-`;
+  return `--- INTERNAL KNOWLEDGE BASE (Tamil Nadu Hospitals & Doctors) ---\nHOSPITALS:\n${JSON.stringify(matchedHospitals.map(h => ({ id: h.id, name: h.name, city: h.cityOrDistrict, specialty: h.specialty, emergency: h.emergencyAvailable, address: h.address, rating: h.rating })), null, 2)}\nDOCTORS:\n${JSON.stringify(matchedDoctors.map(d => ({ id: d.id, name: d.name, department: d.department, specialization: d.specialization, fee: d.consultationFee, availableDays: d.availableDays, rating: d.rating })), null, 2)}\n--- INSTRUCTIONS: Use the above verified internal data to answer the user's question. Do not invent hospitals or doctors that are not in this list.`;
 }
 
-const app = express();
-const PORT = 3000;
+// Instantiate the agent globally
+const aiAgent = new HospitalAIAgent(process.env.GEMINI_API_KEY!);
 
-app.use(express.json());
 
 app.post("/api/chat", async (req, res) => {
   try {
@@ -60,90 +52,14 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
     
-    const ai = getAiClient();
+    // Process query through the ML Agent Orchestrator Pipeline
+    const result = await aiAgent.processQuery(message);
     
-    // RAG step: Retrieve internal data based on the user's message
-    const knowledgeBaseContext = retrieveKnowledgeBase(message);
-    
-    const chatTools = [{
-      functionDeclarations: [
-        {
-          name: "book_appointment",
-          description: "Trigger the UI to open the appointment booking modal for a specific department or doctor.",
-          parameters: {
-            type: Type.OBJECT,
-            properties: {
-              department: { type: Type.STRING, description: "The medical department (e.g., Cardiology)" },
-              doctorId: { type: Type.STRING, description: "The ID of the specific doctor if mentioned" }
-            }
-          }
-        },
-        {
-          name: "find_doctors",
-          description: "Navigate the user to the Doctor Directory with specific filters.",
-          parameters: {
-            type: Type.OBJECT,
-            properties: {
-              specialty: { type: Type.STRING, description: "The specialty to filter by" }
-            }
-          }
-        },
-        {
-          name: "find_hospitals",
-          description: "Navigate the user to the Hospital Directory with specific filters.",
-          parameters: {
-            type: Type.OBJECT,
-            properties: {
-              district: { type: Type.STRING, description: "The district or city" },
-              specialty: { type: Type.STRING, description: "The specialty required" }
-            }
-          }
-        }
-      ]
-    }];
-
-    const response = await generateContentWithFallback(ai, {
-      contents: message,
-      config: {
-        tools: chatTools,
-        systemInstruction: `You are Leo AI, an AI Health Assistant for Tamil Nadu Hospitals. 
-${knowledgeBaseContext}
-
-Instructions:
-You are an ACTION-BASED AI. If the user wants to book an appointment, find doctors, or find hospitals, ALWAYS use the appropriate tool/function call (book_appointment, find_doctors, find_hospitals) instead of just replying with text.
-If the user's request is informational or medical advice, provide a helpful, brief, and medically sound response. If they ask about specific doctors, hospitals, or availability, answer using ONLY the internal knowledge base provided. Remind them you are an AI and for emergencies they should call 108. Keep responses highly empathetic, polite, and professional.
-DO NOT pretend to diagnose patients. For emergency symptoms, clearly direct users toward emergency services (108).
-
-CRITICAL AI SAFETY LAYER & EMERGENCY CLASSIFIER:
-Before responding, internally classify if the user's message indicates a MEDICAL EMERGENCY (e.g., severe chest pain, severe difficulty breathing, stroke symptoms, unconsciousness, severe bleeding, seizure, severe allergic reaction). 
-If it IS an emergency:
-1. STOP normal recommendation flow.
-2. Provide urgent professional/emergency guidance.
-3. Strongly advise them to call 108 (Tamil Nadu Emergency Ambulance) immediately or go to the nearest emergency room.
-4. Do NOT attempt to diagnose or falsely reassure.`
-      }
+    res.json({ 
+      reply: result.reply, 
+      action: result.action,
+      metadata: result.metadata 
     });
-    
-    let action = null;
-    let replyText = response.text || "";
-
-    if (response.functionCalls && response.functionCalls.length > 0) {
-      const call = response.functionCalls[0];
-      action = {
-        type: call.name,
-        payload: call.args
-      };
-      
-      if (call.name === "book_appointment") {
-        replyText = "I'm opening the appointment booking form for you now.";
-      } else if (call.name === "find_doctors") {
-        replyText = "Here are the doctors matching your request.";
-      } else if (call.name === "find_hospitals") {
-        replyText = "I've updated the hospital directory for you.";
-      }
-    }
-
-    res.json({ reply: replyText, action });
   } catch (error: any) {
     console.error("Chat error:", error);
     res.status(500).json({ error: "Failed to generate reply" });
