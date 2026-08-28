@@ -20,6 +20,7 @@ import { NotFound } from './components/NotFound';
 import { DoctorDashboard } from './components/DoctorDashboard';
 
 import { EmergencyModal } from './components/EmergencyModal';
+import { useAuthGuard } from './lib/auth-guard';
 
 export default function PatientApp() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -103,69 +104,28 @@ export default function PatientApp() {
   
   // Auth state persisted in localStorage
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loadingAuth, setLoadingAuth] = useState(true);
+  
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null);
 
+  // Auth state from guard
+  const { user, role, loading: loadingAuth, doctorId } = useAuthGuard();
+
   useEffect(() => {
-    import('./lib/firebase').then(({ auth }) => {
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          // Temporarily set while fetching real role
-          setCurrentUser({
-            id: user.uid,
-            name: user.displayName || user.email?.split('@')[0] || 'User',
-            email: user.email || '',
-            role: 'patient'
-          });
-          try {
-            const userRef = doc(db, 'users', user.uid);
-            const docSnap = await getDoc(userRef);
-            let role = 'patient';
-            let doctorId = undefined;
-            const name = user.displayName || user.email?.split('@')[0] || 'User';
-            const email = user.email || '';
-
-            if (!docSnap.exists()) {
-              role = email === 'leopears2008@gmail.com' ? 'admin' :
-                     (email.startsWith('dr.') || email === 'doctor@example.com') ? 'doctor' : 'patient';
-              await setDoc(userRef, {
-                uid: user.uid,
-                email,
-                name,
-                role,
-                createdAt: Date.now()
-              });
-            } else {
-              const userData = docSnap.data();
-              role = userData.role || 'patient';
-              doctorId = userData.doctorId;
-              await updateDoc(userRef, { email, name });
-            }
-
-            setCurrentUser({
-              id: user.uid,
-              name,
-              email,
-              role: role as any,
-              doctorId
-            });
-            
-            if (role === 'admin' && email === 'leopears2008@gmail.com') setViewMode('admin');
-            else if (role === 'doctor') setViewMode('doctorDashboard');
-          } catch (err) {
-            console.error("Failed to sync user with database:", err);
-          }
-        } else {
-          setCurrentUser(null);
-        }
-        setLoadingAuth(false);
+    if (user && role) {
+      setCurrentUser({
+        id: user.uid,
+        name: user.displayName || user.email?.split('@')[0] || 'User',
+        email: user.email || '',
+        role: role as any,
+        doctorId
       });
-      return () => unsubscribe();
-    }).catch(err => {
-      console.error("Failed to load firebase auth", err);
-      setLoadingAuth(false);
-    });
-  }, []);
+      if (role === 'admin') {
+        window.location.href = '/admin/dashboard';
+      }
+    } else {
+      setCurrentUser(null);
+    }
+  }, [user, role, doctorId]);
 
   const handleLogout = async () => {
     const { auth } = await import('./lib/firebase');
@@ -372,12 +332,6 @@ export default function PatientApp() {
           />
         )}
 
-        {viewMode === 'admin' && currentUser?.email === 'leopears2008@gmail.com' && (
-          <AdminDashboard 
-            appointments={[]} 
-            hospitals={hospitals} 
-          />
-        )}
         {viewMode === 'doctorDashboard' && currentUser?.role === 'doctor' && (
           <DoctorDashboard currentUser={currentUser} />
         )}

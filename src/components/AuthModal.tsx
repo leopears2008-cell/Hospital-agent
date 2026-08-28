@@ -65,50 +65,30 @@ export function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }: Au
         onClose();
       }
     } catch (err: any) {
-      console.error('Auth error:', err);
       if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
         setError('Invalid email or password.');
       } else if (err.code === 'auth/email-already-in-use') {
-        setError('An account with this email already exists.');
+        setError('An account with this email already exists. Switching to login...');
+        setTimeout(() => setIsSignup(false), 2000);
       } else {
-        setError(err.message || 'Authentication failed. Please try again.');
+        setError('Authentication failed: ' + (err.message || 'Please try again.'));
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleAuth = async () => {
+    const handleGoogleAuth = async () => {
     try {
       setError('');
       setLoading(true);
-      const credential = await googleSignIn();
-      if (credential) {
-        // Ensure user document exists for Google login
-        const userRef = doc(db, 'users', credential.user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
-            name: credential.user.displayName || credential.user.email?.split('@')[0] || '',
-            email: credential.user.email || '',
-            role: 'patient',
-            createdAt: serverTimestamp()
-          });
-        }
-        
-        onLoginSuccess({
-          id: credential.user.uid,
-          name: credential.user.displayName || credential.user.email?.split('@')[0] || '',
-          email: credential.user.email || ''
-        });
+      const result = await googleSignIn();
+      if (result && result.user) {
         onClose();
       }
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        setError(''); // Silently ignore user cancellations
-      } else {
-        console.error('Google auth error:', err);
-        setError(err.message || 'Google authentication failed.');
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        setError('Google Sign In failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -126,7 +106,6 @@ export function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }: Au
       await sendPasswordResetEmail(auth, email);
       setMsg('Password reset email sent! Please check your inbox.');
     } catch (err: any) {
-      console.error('Reset password error:', err);
       setError(err.message || 'Failed to send reset email.');
     } finally {
       setLoading(false);
@@ -286,6 +265,16 @@ export function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }: Au
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
             Google
           </button>
+          
+          <div className="mt-4 text-center">
+            <a 
+              href="/admin/login" 
+              className="w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+            >
+              <Shield className="w-4 h-4 text-slate-500" />
+              Hospital Administrator Portal
+            </a>
+          </div>
 
           <div className="mt-8 text-center">
             <p className="text-slate-600 font-medium">

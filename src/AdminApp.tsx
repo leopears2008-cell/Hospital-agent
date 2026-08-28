@@ -3,9 +3,10 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { 
   LayoutDashboard, Users, Activity, Settings as SettingsIcon, 
   LogOut, Shield, FileText, Database, Calendar as CalendarIcon 
-} from 'lucide-react';
+, Bell, X } from 'lucide-react';
 import { auth, db } from './lib/firebase';
-import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { useAuthGuard } from './lib/auth-guard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminAppointments } from './components/AdminAppointments';
 import { AdminPatients } from './components/AdminPatients';
@@ -21,8 +22,40 @@ import { AdminUsers } from './components/AdminUsers';
 export default function AdminApp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
+  const { user, role, loading } = useAuthGuard();
   const [authorized, setAuthorized] = useState(false);
+  const [toasts, setToasts] = useState<{id: string, message: string}[]>([]);
+
+  useEffect(() => {
+    if (!authorized) return;
+    let initialLoad = true;
+    
+    const unsubscribe = onSnapshot(collection(db, 'appointments'), (snapshot) => {
+      if (initialLoad) {
+        initialLoad = false;
+        return;
+      }
+      
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const appt = change.doc.data();
+          const id = change.doc.id;
+          const message = `New appointment requested by ${appt.patientName || 'a patient'}.`;
+          
+          setToasts(prev => {
+            if (prev.find(t => t.id === id)) return prev;
+            return [{ id, message }, ...prev].slice(0, 5);
+          });
+          
+          setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+          }, 5000);
+        }
+      });
+    });
+    
+    return () => unsubscribe();
+  }, [authorized]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -44,16 +77,16 @@ export default function AdminApp() {
                });
             }
           } else {
-            navigate('/patient/login');
+            window.location.href = '/';
           }
         } catch (err) {
           console.error("Auth check failed:", err);
-          navigate('/patient/login');
+          window.location.href = '/';
         }
       } else {
         navigate('/admin/login');
       }
-      setLoading(false);
+      
     });
     return () => unsubscribe();
   }, [navigate, location.pathname]);
@@ -142,6 +175,27 @@ export default function AdminApp() {
             <Route path="audit-logs" element={<AdminAuditLogs />} />
           </Routes>
         </main>
+        
+        {/* Toast Notifications */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+          {toasts.map(toast => (
+            <div key={toast.id} className="bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex items-start gap-4 min-w-[300px] animate-in slide-in-from-right-8 duration-300">
+              <div className="bg-blue-100 text-blue-600 p-2 rounded-full shrink-0">
+                <Bell className="w-5 h-5" />
+              </div>
+              <div className="flex-1 pt-0.5">
+                <h4 className="text-sm font-bold text-slate-800">New Request</h4>
+                <p className="text-sm text-slate-600 mt-1">{toast.message}</p>
+              </div>
+              <button 
+                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

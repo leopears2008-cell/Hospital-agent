@@ -1,11 +1,30 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists() && snap.data().role === 'admin') {
+            navigate('/admin/dashboard');
+          } else {
+            navigate('/');
+          }
+        } catch (err) {
+          navigate('/');
+        }
+      }
+    });
+    return () => unsub();
+  }, [navigate]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -90,6 +109,21 @@ export default function AdminLogin() {
               )}
             </button>
           </form>
+          
+          <div className="mt-8 relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+          </div>
+          
+          <div className="mt-6 text-center">
+            <a 
+              href="/" 
+              className="text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors"
+            >
+              &larr; Back to Patient Portal
+            </a>
+          </div>
         </div>
       </div>
     </div>
