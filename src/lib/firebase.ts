@@ -37,6 +37,19 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
+export const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log("Successfully signed in:", result.user);
+    return result;
+  } catch (error) {
+    console.error("Error signing in with Google:", error);
+    throw error;
+  }
+};
+
+export const logOut = () => auth.signOut();
+
 export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
   try {
     isSigningIn = true;

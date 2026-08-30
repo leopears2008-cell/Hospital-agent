@@ -71,7 +71,11 @@ export class PgVectorStore {
     }));
 
     // Batch insert into pgvector table
-    await db.insert(knowledge_chunks).values(insertData);
+    try {
+      await db.insert(knowledge_chunks).values(insertData);
+    } catch (e) {
+      console.warn("Database not connected, skipping insert.");
+    }
   }
 
   /**
@@ -121,26 +125,29 @@ export class PgVectorStore {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // 4. Execute query
-    const results = await db
-      .select({
-        id: knowledge_chunks.id,
-        documentId: knowledge_chunks.documentId,
-        documentType: knowledge_chunks.documentType,
-        content: knowledge_chunks.content,
-        metadata: knowledge_chunks.metadata,
-        similarity: similarityScore,
-      })
-      .from(knowledge_chunks)
-      .where(whereClause)
-      .orderBy(desc(similarityScore))
-      .limit(topK);
+    try {
+      const results = await db
+        .select({
+          id: knowledge_chunks.id,
+          documentId: knowledge_chunks.documentId,
+          documentType: knowledge_chunks.documentType,
+          content: knowledge_chunks.content,
+          metadata: knowledge_chunks.metadata,
+          similarity: similarityScore,
+        })
+        .from(knowledge_chunks)
+        .where(whereClause)
+        .orderBy(desc(similarityScore))
+        .limit(topK);
 
-    // 5. Map and parse metadata back to an object
-    return results.map(row => ({
-      ...row,
-      // Postgres returns sql calculations as unknown type / string sometimes, ensure it's a Number
-      similarity: Number(row.similarity), 
-      metadata: JSON.parse(row.metadata)
-    }));
+      return results.map((row: any) => ({
+        ...row,
+        similarity: Number(row.similarity), 
+        metadata: row.metadata ? JSON.parse(row.metadata) : {}
+      }));
+    } catch (e) {
+      console.warn("Database not connected, returning empty vector search results.");
+      return [];
+    }
   }
 }

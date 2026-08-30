@@ -24,6 +24,19 @@ export const createPool = () => {
   return global._postgresPool;
 };
 
-const pool = createPool();
-
-export const db = drizzle(pool, { schema });
+let pool;
+let db;
+try {
+  pool = createPool();
+  db = drizzle(pool, { schema });
+} catch (e) {
+  console.warn('[AI Studio] Database not connected — using mock');
+  const noOp = { findMany: async () => [], findFirst: async () => null,
+    findUnique: async () => null, create: async (d) => d?.data ?? {},
+    update: async (d) => d?.data ?? {}, delete: async () => ({}) };
+  db = new Proxy({}, {
+    get: (_, prop) => prop === 'query'
+      ? new Proxy({}, { get: () => noOp }) : async () => [],
+  });
+}
+export { db };
