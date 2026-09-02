@@ -64,7 +64,6 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     return { user: result.user, accessToken: cachedAccessToken || '' };
   } catch (error: any) {
     if (error.code === 'auth/unauthorized-domain') {
-      console.error('Sign in error: Firebase: Error (auth/unauthorized-domain).');
       alert(`Firebase Domain Error: You need to add this app's URL to your Firebase Console > Authentication > Settings > Authorized Domains.`);
     } else if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
       console.error('Sign in error:', error);
