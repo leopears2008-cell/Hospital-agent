@@ -27,6 +27,9 @@ export const createPool = () => {
 let pool;
 let db;
 try {
+  if (!process.env.SQL_HOST) {
+    throw new Error('SQL_HOST is not set');
+  }
   pool = createPool();
   db = drizzle(pool, { schema });
 } catch (e) {

@@ -42,7 +42,10 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     console.log("Successfully signed in:", result.user);
     return result;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'auth/unauthorized-domain') {
+      alert(`Firebase Domain Error: You need to add this app's URL to your Firebase Console > Authentication > Settings > Authorized Domains.`);
+    }
     console.error("Error signing in with Google:", error);
     throw error;
   }
@@ -60,7 +63,10 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     }
     return { user: result.user, accessToken: cachedAccessToken || '' };
   } catch (error: any) {
-    if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+    if (error.code === 'auth/unauthorized-domain') {
+      console.error('Sign in error: Firebase: Error (auth/unauthorized-domain).');
+      alert(`Firebase Domain Error: You need to add this app's URL to your Firebase Console > Authentication > Settings > Authorized Domains.`);
+    } else if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
       console.error('Sign in error:', error);
     }
     throw error;
