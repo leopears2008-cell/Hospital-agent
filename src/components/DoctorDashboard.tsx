@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, User, CheckCircle, XCircle } from 'lucide-react';
-import { db, auth } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { collection, query, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Appointment, User as AppUser } from '../types';
 

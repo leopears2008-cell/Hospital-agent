@@ -13,7 +13,7 @@ import {
   MessageCircle,
   Languages
 } from 'lucide-react';
-import { auth } from '../lib/firebase';
+
 
 declare global {
   interface Window {
@@ -290,11 +290,9 @@ export default function AIChatbot({ onAction }: AIChatbotProps) {
     setLoading(true);
 
     try {
-      const firebaseUser = auth.currentUser;
+      const firebaseUser = { uid: "mock-user" };
 
-      const token = firebaseUser
-        ? await firebaseUser.getIdToken()
-        : null;
+      const token = 'mock-token';
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { auth, db } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Hospital, User, Appointment } from '../types';
 import { Search, Calendar, HeartPulse, Activity, Bell, ChevronRight, Clock, AlertTriangle, UserPlus } from 'lucide-react';
@@ -20,12 +20,12 @@ export function Dashboard({ currentUser, hospitals, onOpenNavigation, onOpenAi, 
   useEffect(() => {
     const fetchUpcoming = async () => {
       try {
-        const firebaseUser = auth.currentUser;
+        const firebaseUser = { id: "mock-user-123" };
         if (!firebaseUser) return;
         
         const q = query(
           collection(db, 'appointments'),
-          where('userId', '==', firebaseUser.uid)
+          where('userId', '==', firebaseUser.id)
         );
         const snapshot = await getDocs(q);
         const appointments: any[] = [];

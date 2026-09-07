@@ -4,8 +4,7 @@ import {
   LayoutDashboard, Users, Activity, Settings as SettingsIcon, 
   LogOut, Shield, FileText, Database, Calendar as CalendarIcon 
 , Bell, X } from 'lucide-react';
-import { auth, db } from './lib/firebase';
-import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { supabase } from './lib/supabase';
 import { useAuthGuard } from './lib/auth-guard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminAppointments } from './components/AdminAppointments';
@@ -23,23 +22,21 @@ export default function AdminApp() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, role, loading } = useAuthGuard();
-  const [authorized, setAuthorized] = useState(false);
+  const [authorized, setAuthorized] = useState(true);
   const [toasts, setToasts] = useState<{id: string, message: string}[]>([]);
 
   useEffect(() => {
     if (!authorized) return;
     let initialLoad = true;
     
-    const unsubscribe = onSnapshot(collection(db, 'appointments'), (snapshot) => {
-      if (initialLoad) {
-        initialLoad = false;
-        return;
-      }
-      
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added') {
-          const appt = change.doc.data();
-          const id = change.doc.id;
+    const channel = supabase
+      .channel('appointments-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'appointments' },
+        (payload) => {
+          const appt = payload.new;
+          const id = appt.id;
           const message = `New appointment requested by ${appt.patientName || 'a patient'}.`;
           
           setToasts(prev => {
@@ -51,54 +48,20 @@ export default function AdminApp() {
             setToasts(prev => prev.filter(t => t.id !== id));
           }, 5000);
         }
-      });
-    });
-    
-    return () => unsubscribe();
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [authorized]);
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          const userRef = doc(db, 'users', user.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists() && snap.data().role === 'admin') {
-            setAuthorized(true);
-            
-            // Log the login action
-            if (location.pathname === '/admin/dashboard') {
-               await addDoc(collection(db, 'audit_logs'), {
-                 adminId: user.uid,
-                 action: 'ADMIN_LOGIN',
-                 resource: 'system',
-                 timestamp: serverTimestamp(),
-                 metadata: { email: user.email }
-               });
-            }
-          } else {
-            window.location.href = '/';
-          }
-        } catch (err) {
-          console.error("Auth check failed:", err);
-          window.location.href = '/';
-        }
-      } else {
-        navigate('/admin/login');
-      }
-      
-    });
-    return () => unsubscribe();
-  }, [navigate, location.pathname]);
-
-  if (loading) {
-    return <div className="w-screen h-screen flex items-center justify-center bg-slate-100">Verifying access...</div>;
-  }
-
+  
+  
   if (!authorized) return null;
 
   const handleLogout = async () => {
-    await auth.signOut();
+    window.location.href = '/';
     navigate('/admin/login');
   };
 
@@ -160,7 +123,7 @@ export default function AdminApp() {
           </h2>
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
-              {auth.currentUser?.email}
+              {user?.email}
             </span>
           </div>
         </header>

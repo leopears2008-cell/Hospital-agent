@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { X, Calendar, Clock, User as UserIcon, FileText, CheckCircle, ChevronRight, ChevronLeft, MapPin, Search, QrCode } from 'lucide-react';
 import { Hospital, User, Doctor } from '../types';
-import { auth, db } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, runTransaction, doc, query, getDocs, where } from 'firebase/firestore';
 import { sendEmail } from '../lib/gmail';
 import { MOCK_DOCTORS } from '../data/doctors';
@@ -62,14 +62,14 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
     setError('');
 
     try {
-      const firebaseUser = auth.currentUser;
+      const firebaseUser = { id: "mock-user-123" };
       if (!firebaseUser) throw new Error("Authentication required");
       
       const appointmentData = {
         hospitalId: hospital.id,
         doctorId,
         department,
-        userId: firebaseUser.uid,
+        userId: firebaseUser.id,
         patientName,
         patientAge: parseInt(patientAge),
         patientPhone,

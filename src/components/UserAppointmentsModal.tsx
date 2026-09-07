@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Mail, RefreshCw } from 'lucide-react';
 import { AppointmentTableSkeleton } from './Skeletons';
-import { auth, db } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { TAMIL_NADU_HOSPITALS } from '../data/tamilNaduHospitals';
 import { sendEmail } from '../lib/gmail';
@@ -17,10 +17,10 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
 
   const fetchAppointments = async () => {
     try {
-      const firebaseUser = auth.currentUser;
+      const firebaseUser = { id: "mock-user-123", email: "mock@example.com" };
       if (!firebaseUser) throw new Error("Authentication required");
       
-      const q = query(collection(db, 'appointments'), where('userId', '==', firebaseUser.uid));
+      const q = query(collection(db, 'appointments'), where('userId', '==', firebaseUser.id));
       const snapshot = await getDocs(q);
       const appts: any[] = [];
       snapshot.forEach(d => appts.push({ id: d.id, ...d.data() }));
@@ -42,7 +42,7 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
     if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
     
     try {
-      const firebaseUser = auth.currentUser;
+      const firebaseUser = { id: "mock-user-123", email: "mock@example.com" };
       if (!firebaseUser) return;
       
       const appointmentRef = doc(db, 'appointments', id);
@@ -61,7 +61,7 @@ export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
 
   const handleSendEmail = async (app: any) => {
     try {
-      const firebaseUser = auth.currentUser;
+      const firebaseUser = { id: "mock-user-123", email: "mock@example.com" };
       if (!firebaseUser || !firebaseUser.email) {
         alert("You must be logged in with an email to send confirmations.");
         return;

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+const fs = require('fs');
+let content = `import { useState, useEffect } from 'react';
 
 export interface AuthState {
   user: any | null;
@@ -33,3 +34,5 @@ export function useAuthGuard() {
 
   return authState;
 }
+`;
+fs.writeFileSync('src/lib/auth-guard.ts', content);

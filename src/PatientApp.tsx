@@ -1,5 +1,4 @@
-import { auth, db } from './lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { supabase } from './lib/supabase';
 import { useState, useMemo, useEffect } from 'react';
 import { TAMIL_NADU_HOSPITALS } from './data/tamilNaduHospitals';
 import { Hospital, SearchFilters, User } from './types';
@@ -8,7 +7,6 @@ import { HospitalMap } from './components/HospitalMap';
 import { HospitalList } from './components/HospitalList';
 import { HospitalModal } from './components/HospitalModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
-import { AuthModal } from './components/AuthModal';
 import { UserAppointmentsModal } from './components/UserAppointmentsModal';
 import { LandingPage } from './components/LandingPage';
 import AIChatbot from './components/AIChatbot';
@@ -43,12 +41,36 @@ export default function PatientApp() {
   });
   
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'settings', 'features'), (doc) => {
-      if (doc.exists()) {
-        setFeatures(doc.data() as any);
+    const fetchSettings = async () => {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('id', 'features')
+        .single();
+      if (data) {
+        // Exclude the id field if we just want features
+        const { id, ...featureData } = data;
+        setFeatures(featureData as any);
       }
-    });
-    return () => unsub();
+    };
+    fetchSettings();
+
+    const channel = supabase
+      .channel('settings-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'settings', filter: 'id=eq.features' },
+        (payload) => {
+          const payloadNew = payload.new as any;
+          const { id, ...featureData } = payloadNew;
+          setFeatures(featureData as any);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
@@ -113,8 +135,8 @@ export default function PatientApp() {
   useEffect(() => {
     if (user && role) {
       setCurrentUser({
-        id: user.uid,
-        name: user.displayName || user.email?.split('@')[0] || 'User',
+        id: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
         email: user.email || '',
         role: role as any,
         doctorId
@@ -128,8 +150,8 @@ export default function PatientApp() {
   }, [user, role, doctorId]);
 
   const handleLogout = async () => {
-    const { auth } = await import('./lib/firebase');
-    await auth.signOut();
+    
+    window.location.href = '/';
   };
 
   const handleDetectLocation = () => {
@@ -284,64 +306,45 @@ export default function PatientApp() {
   if (!currentUser) {
     return (
       <>
-        <LandingPage onOpenAuth={(mode) => { if(mode === 'signup' && !features.patientRegistration) { alert('Patient registration is disabled by the administrator.'); return; } setAuthModalMode(mode); }} />
-        {authModalMode && (
-          <AuthModal
-            initialMode={authModalMode}
-            onClose={() => setAuthModalMode(null)}
-            onLoginSuccess={(user) => {
-              setCurrentUser(user);
-              setAuthModalMode(null);
-            }}
-          />
-        )}
+        <LandingPage onOpenAuth={() => {}} />
       </>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 font-sans">
+    <div className="flex flex-col h-screen overflow-hidden">
       <Navbar
         onOpenSideMenu={() => setIsSideMenuOpen(true)}
-        onOpenAiAssistant={() => { if(features.aiAssistant) setIsAiModalOpen(true); else alert('AI Assistant is currently disabled.'); }}
+        onOpenAiAssistant={() => setIsAiModalOpen(true)}
         viewMode={viewMode}
-        setViewMode={setViewMode}
-        totalHospitals={filteredHospitals.length}
+        setViewMode={setViewMode as any}
+        totalHospitals={allHospitals.length}
         currentUser={currentUser}
-        onOpenAuth={(mode) => setAuthModalMode(mode)}
+        onOpenAuth={() => {}}
         onLogout={handleLogout}
         onOpenAppointments={() => setIsAppointmentsModalOpen(true)}
       />
-
-      <main className="flex-1 flex overflow-hidden relative">
-        {viewMode === 'dashboard' && (
+      <main className="flex-1 flex overflow-hidden relative bg-slate-100">
+        {viewMode === 'dashboard' && currentUser?.role !== 'doctor' && (
           <Dashboard 
+            hospitals={allHospitals} 
+            onOpenNavigation={(mode) => setViewMode(mode as any)} 
             currentUser={currentUser}
-            hospitals={filteredHospitals}
-            onOpenNavigation={(mode) => setViewMode(mode)}
-            onOpenAi={() => { if(features.aiAssistant) setIsAiModalOpen(true); else alert('AI Assistant is currently disabled.'); }}
+            onOpenAi={() => setIsAiModalOpen(true)}
             onOpenAppointments={() => setIsAppointmentsModalOpen(true)}
             onEmergency={() => setIsEmergencyModalOpen(true)}
           />
         )}
-
         {viewMode === 'doctors' && (
-          <DoctorDirectory 
+          <DoctorDirectory
             currentUser={currentUser}
-            onOpenAuth={(mode) => setAuthModalMode(mode)}
+            onOpenAuth={() => {}}
           />
         )}
-
         {viewMode === 'doctorDashboard' && currentUser?.role === 'doctor' && (
           <DoctorDashboard currentUser={currentUser} />
         )}
-        {viewMode === 'search' && (
-          <div className="w-full h-full p-4 md:p-6 bg-slate-100 overflow-hidden">
-             <div className="max-w-4xl mx-auto h-full">
-               <DocumentSearch hospitals={hospitals} />
-             </div>
-          </div>
-        )}
+        
         {viewMode === '404' && (
           <NotFound onGoHome={() => setViewMode('dashboard')} />
         )}
@@ -405,16 +408,7 @@ export default function PatientApp() {
       )}
 
       {/* Auth Modal (Sign Up / Login) */}
-      {authModalMode && (
-        <AuthModal
-          initialMode={authModalMode}
-          onClose={() => setAuthModalMode(null)}
-          onLoginSuccess={(user) => {
-            setCurrentUser(user);
-            setAuthModalMode(null);
-          }}
-        />
-      )}
+      
 
       {/* User Appointments Modal */}
       {isAppointmentsModalOpen && currentUser && (
