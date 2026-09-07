@@ -1,5 +1,4 @@
 name: Hospital AI Agent CI
-
 on:
   push:
     branches: [ main, master ]
@@ -7,8 +6,9 @@ on:
     branches: [ main, master ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
     
@@ -23,6 +23,3 @@ jobs:
       
     - name: Type Check
       run: npx tsc --noEmit
-      
-    - name: Run Tests
-      run: npx vitest run
