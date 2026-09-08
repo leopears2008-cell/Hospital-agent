@@ -1,32 +1,63 @@
-import { useState, useEffect } from 'react';
-import { useUser, useOrganizationList } from '@clerk/react';
-import { useNavigate, useLocation } from 'react-router-dom';
+const fs = require('fs');
 
-export interface AuthState {
-  user: any | null;
-  role: 'admin' | 'patient' | 'doctor' | null;
-  loading: boolean;
-  doctorId?: string;
-}
+let content = fs.readFileSync('src/lib/auth-guard.ts', 'utf8');
 
-export function useAuthGuard() {
-  const { user, isLoaded: userLoaded } = useUser();
-  const { userMemberships, isLoaded: orgsLoaded } = useOrganizationList({
-    userMemberships: {
-      infinite: true,
-    },
-  });
-  
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    role: null,
-    loading: true,
-  });
+const oldEffect = `  useEffect(() => {
+    if (!userLoaded || !orgsLoaded) {
+      setAuthState(prev => ({ ...prev, loading: true }));
+      return;
+    }
 
-  const navigate = useNavigate();
-  const location = useLocation();
+    if (!user) {
+      setAuthState({ user: null, role: null, loading: false });
+      return;
+    }
 
-  useEffect(() => {
+    const isAdminRoute = location.pathname.startsWith('/admin');
+    const isOrgRoute = location.pathname.startsWith('/org');
+    
+    // Check if the user is part of an organization
+    const hasOrg = userMemberships && userMemberships.data && userMemberships.data.length > 0;
+
+    if (hasOrg) {
+      // If user belongs to an org, automatically route them to the specialized org dashboard
+      if (!isOrgRoute) {
+        navigate('/org', { replace: true });
+      }
+      setAuthState({
+        user: {
+          id: user.id,
+          uid: user.id,
+          email: user.primaryEmailAddress?.emailAddress,
+          user_metadata: { full_name: user.fullName }
+        },
+        role: 'admin',
+        loading: false
+      });
+      return;
+    } else {
+      // Not in an organization, if trying to access org route, redirect home
+      if (isOrgRoute) {
+        navigate('/', { replace: true });
+      }
+    }
+
+    // Default mock logic fallback for non-org users
+    const role = isAdminRoute ? 'admin' : 'patient';
+    setAuthState({
+      user: {
+        id: user.id,
+        uid: user.id,
+        email: user.primaryEmailAddress?.emailAddress,
+        user_metadata: { full_name: user.fullName }
+      },
+      role: role,
+      loading: false
+    });
+  }, [user, userLoaded, orgsLoaded, userMemberships, location.pathname, navigate]);`;
+
+
+const newEffect = `  useEffect(() => {
     if (!userLoaded || !orgsLoaded) {
       setAuthState(prev => ({ ...prev, loading: true }));
       return;
@@ -115,7 +146,8 @@ export function useAuthGuard() {
     };
     
     syncUser();
-  }, [user, userLoaded, orgsLoaded, userMemberships, location.pathname, navigate]);
+  }, [user, userLoaded, orgsLoaded, userMemberships, location.pathname, navigate]);`;
 
-  return authState;
-}
+content = content.replace(oldEffect, newEffect);
+fs.writeFileSync('src/lib/auth-guard.ts', content);
+

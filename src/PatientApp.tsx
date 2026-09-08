@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { TAMIL_NADU_HOSPITALS } from './data/tamilNaduHospitals';
 import { Hospital, SearchFilters, User } from './types';
 import { Navbar } from './components/Navbar';
+import { AuthModal } from './components/AuthModal';
 import { HospitalMap } from './components/HospitalMap';
 import { HospitalList } from './components/HospitalList';
 import { HospitalModal } from './components/HospitalModal';
@@ -19,6 +20,7 @@ import { DoctorDashboard } from './components/DoctorDashboard';
 
 import { EmergencyModal } from './components/EmergencyModal';
 import { useAuthGuard } from './lib/auth-guard';
+import { useAuth } from '@clerk/react';
 
 export default function PatientApp() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -85,6 +87,7 @@ export default function PatientApp() {
   const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null);
 
   const handleAiAction = (action: any) => {
     if (!action) return;
@@ -127,7 +130,6 @@ export default function PatientApp() {
   // Auth state persisted in localStorage
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null);
 
   // Auth state from guard
   const { user, role, loading: loadingAuth, doctorId } = useAuthGuard();
@@ -295,7 +297,9 @@ export default function PatientApp() {
     );
   }
 
-  if (loadingAuth) {
+  const { isLoaded, userId } = useAuth();
+  
+  if (!isLoaded) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-slate-100">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
@@ -303,10 +307,15 @@ export default function PatientApp() {
     );
   }
 
-  if (!currentUser) {
+  if (!userId) {
     return (
       <>
-        <LandingPage onOpenAuth={() => {}} />
+        <LandingPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+        <AuthModal 
+          isOpen={authModalMode !== null} 
+          onClose={() => setAuthModalMode(null)} 
+          initialView={authModalMode || 'login'} 
+        />
       </>
     );
   }
@@ -320,7 +329,7 @@ export default function PatientApp() {
         setViewMode={setViewMode as any}
         totalHospitals={allHospitals.length}
         currentUser={currentUser}
-        onOpenAuth={() => {}}
+        onOpenAuth={(mode) => setAuthModalMode(mode)}
         onLogout={handleLogout}
         onOpenAppointments={() => setIsAppointmentsModalOpen(true)}
       />

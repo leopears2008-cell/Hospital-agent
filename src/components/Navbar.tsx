@@ -1,5 +1,6 @@
 import { Shield, Sparkles, PhoneCall, LogOut, User as UserIcon, LogIn, UserPlus, Menu } from 'lucide-react';
 import { User } from '../types';
+import { SignInButton, SignUpButton, Show, UserButton } from '@clerk/react';
 import { EmergencyAlertsToggle } from './EmergencyAlertsToggle';
 import { NotificationDropdown } from './NotificationDropdown';
 
@@ -100,7 +101,23 @@ export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMod
 
           {/* Auth Section */}
           <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-            {currentUser ? (
+            <Show when="signed-out">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onOpenAuth('login')}
+                  className="px-3 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5" /> Login
+                </button>
+                <button
+                  onClick={() => onOpenAuth('signup')}
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> Sign up
+                </button>
+              </div>
+            </Show>
+            <Show when="signed-in">
               <div className="flex items-center gap-3">
                 <NotificationDropdown />
                 <button
@@ -109,32 +126,11 @@ export function Navbar({ onOpenSideMenu, onOpenAiAssistant, viewMode, setViewMod
                   title="My Appointments"
                 >
                   <UserIcon className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-bold text-slate-800">{currentUser.name}</span>
+                  <span className="text-xs font-bold text-slate-800">My Appointments</span>
                 </button>
-                <button
-                  onClick={onLogout}
-                  className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
+                <UserButton />
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onOpenAuth('login')}
-                  className="px-3 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1"
-                >
-                  <LogIn className="w-3.5 h-3.5" /> Login
-                </button>
-                <button
-                  onClick={() => onOpenAuth('signup')}
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-bold transition-colors flex items-center gap-1 shadow-xs"
-                >
-                  <UserPlus className="w-3.5 h-3.5" /> Sign up
-                </button>
-              </div>
-            )}
+            </Show>
           </div>
         </div>
       </div>
