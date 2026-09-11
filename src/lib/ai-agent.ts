@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type, FunctionDeclaration, GenerateContentResponse } from "@google/genai";
-import { TAMIL_NADU_HOSPITALS } from "../data/tamilNaduHospitals.ts";
-import { MOCK_DOCTORS } from "../data/doctors.ts";
+import { db } from "../db/index.ts";
+import { hospitals, doctors } from "../db/schema.ts";
+
 
 export interface RAGChunk {
   id: string;
@@ -20,32 +21,36 @@ class VectorStore {
   }
 
   // Phase 4: Chunking strategy
+  
   public async ingestData() {
     console.log("Ingesting and chunking hospital/doctor data...");
-    
-    // Chunking Hospitals
-    for (const hospital of TAMIL_NADU_HOSPITALS) {
-      const content = `Hospital Name: ${hospital.name}. Location: ${hospital.cityOrDistrict}. Address: ${hospital.address}. Specialties: ${hospital.specialty}. Rating: ${hospital.rating}/5. Emergency: ${hospital.emergencyAvailable ? 'Yes' : 'No'}.`;
-      this.chunks.push({
-        id: `hosp_${hospital.id}`,
-        documentType: "hospital_profile",
-        content,
-        metadata: { hospitalId: hospital.id, district: hospital.cityOrDistrict, type: "hospital" }
-      });
-    }
+    try {
+      const allHospitals = await db.select().from(hospitals).all();
+      const allDoctors = await db.select().from(doctors).all();
 
-    // Chunking Doctors
-    for (const doctor of MOCK_DOCTORS) {
-      const content = `Doctor Name: ${doctor.name}. Department: ${doctor.department}. Specialization: ${doctor.specialization}. Fee: ₹${doctor.consultationFee}. Rating: ${doctor.rating}/5.`;
-      this.chunks.push({
-        id: `doc_${doctor.id}`,
-        documentType: "doctor_profile",
-        content,
-        metadata: { doctorId: doctor.id, department: doctor.department, type: "doctor" }
-      });
-    }
+      // Chunking Hospitals
+      for (const hospital of allHospitals) {
+        const content = `Hospital Name: ${hospital.name}. Location: ${hospital.cityOrDistrict}. Address: ${hospital.address}. Specialties: ${hospital.specialty}. Rating: ${hospital.rating}/5. Emergency: ${hospital.emergencyAvailable ? 'Yes' : 'No'}.`;
+        this.chunks.push({
+          id: `hosp_${hospital.id}`,
+          documentType: "hospital_profile",
+          content,
+          metadata: { hospitalId: hospital.id, district: hospital.cityOrDistrict, type: "hospital" }
+        });
+      }
 
-    // Phase 5: Embeddings Generation
+      // Chunking Doctors
+      for (const doctor of allDoctors) {
+        const content = `Doctor Name: ${doctor.name}. Specialization: ${doctor.specialization} (${doctor.department}). Experience: ${doctor.experienceYears} years. Consultation Fee: ₹${doctor.consultationFee}. Hospital: ${doctor.hospitalId}.`;
+        this.chunks.push({
+          id: `doc_${doctor.id}`,
+          documentType: "doctor_profile",
+          content,
+          metadata: { doctorId: doctor.id, hospitalId: doctor.hospitalId, specialization: doctor.specialization, type: "doctor" }
+        });
+      }
+    } catch(e) { console.error("Ingest error", e); }
+// Phase 5: Embeddings Generation
     try {
       const texts = this.chunks.map(c => c.content);
       const batchSize = 10;

@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Bell, BellOff } from 'lucide-react';
-import { TAMIL_NADU_HOSPITALS } from '../data/tamilNaduHospitals';
+
 import { getDistanceInKm } from '../lib/geo';
 
 export function EmergencyAlertsToggle() {
+  const [TAMIL_NADU_HOSPITALS, setHospitals] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/hospitals').then(res => res.json()).then(setHospitals).catch(console.error);
+  }, []);
+
   const [isEnabled, setIsEnabled] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
   const [notifiedHospitals, setNotifiedHospitals] = useState<Set<string>>(new Set());

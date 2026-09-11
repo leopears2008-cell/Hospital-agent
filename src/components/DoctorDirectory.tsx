@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Doctor, Hospital, User } from '../types';
-import { MOCK_DOCTORS } from '../data/doctors';
-import { TAMIL_NADU_HOSPITALS } from '../data/tamilNaduHospitals';
+
+
 import { Search, Star, MapPin, Calendar, Clock, Stethoscope, ChevronRight } from 'lucide-react';
 import { AppointmentModal } from './AppointmentModal';
 
@@ -11,6 +11,14 @@ interface DoctorDirectoryProps {
 }
 
 export function DoctorDirectory({ currentUser, onOpenAuth }: DoctorDirectoryProps) {
+  const [MOCK_DOCTORS, setDoctors] = useState<Doctor[]>([]);
+  const [TAMIL_NADU_HOSPITALS, setHospitals] = useState<Hospital[]>([]);
+
+  useEffect(() => {
+    fetch('/api/doctors').then(res => res.json()).then(setDoctors).catch(console.error);
+    fetch('/api/hospitals').then(res => res.json()).then(setHospitals).catch(console.error);
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All');
   const [selectedDoctor, setSelectedDoctor] = useState<{doctor: Doctor, hospital: Hospital} | null>(null);

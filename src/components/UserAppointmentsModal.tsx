@@ -3,7 +3,8 @@ import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Mail, RefreshCw 
 import { AppointmentTableSkeleton } from './Skeletons';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { TAMIL_NADU_HOSPITALS } from '../data/tamilNaduHospitals';
+import { useAuth } from '@clerk/react';
+
 import { sendEmail } from '../lib/gmail';
 
 interface UserAppointmentsModalProps {
@@ -12,20 +13,28 @@ interface UserAppointmentsModalProps {
 
 export function UserAppointmentsModal({ onClose }: UserAppointmentsModalProps) {
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [TAMIL_NADU_HOSPITALS, setHospitals] = useState<any[]>([]);
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    fetch('/api/hospitals').then(res => res.json()).then(setHospitals).catch(console.error);
+  }, []);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  
   const fetchAppointments = async () => {
     try {
-      const firebaseUser = { id: "mock-user-123", email: "mock@example.com" };
-      if (!firebaseUser) throw new Error("Authentication required");
-      
-      const q = query(collection(db, 'appointments'), where('userId', '==', firebaseUser.id));
-      const snapshot = await getDocs(q);
-      const appts: any[] = [];
-      snapshot.forEach(d => appts.push({ id: d.id, ...d.data() }));
-      appts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
+      const token = await getToken();
+      const response = await fetch('/api/appointments', {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (!response.ok) throw new Error("Failed to load appointments");
+      const appts = await response.json();
+      appts.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setAppointments(appts);
     } catch (err: any) {
       setError(err.message);

@@ -1,21 +1,33 @@
-import { adminDb } from '../lib/firebase-admin.ts';
+import { db } from './index.ts';
+import { users } from './schema.ts';
+import { eq } from 'drizzle-orm';
 
-export async function getOrCreateUser(uid: string, email: string, name: string) {
+export async function getOrCreateUser(uid: string, email: string = '', name: string = 'User') {
   try {
-    const userRef = adminDb.collection('users').doc(uid);
-    const doc = await userRef.get();
+    const existingUser = await db.select().from(users).where(eq(users.uid, uid)).get();
     
-    if (!doc.exists) {
-      // Default to patient if not leopears2008@gmail.com
-      const role = email === 'leopears2008@gmail.com' ? 'admin' : 
-                   email.startsWith('dr.') || email === 'doctor@example.com' ? 'doctor' : 'patient';
-      const userData = { uid, email, name, role, createdAt: Date.now() };
-      await userRef.set(userData);
-      return userData;
+    if (!existingUser) {
+      // Default to patient if not admin/doctor based on email heuristic for now
+      const role = email === 'leopears2008@gmail.com' ? 'admin' :
+                    (email && email.startsWith('dr.')) || email === 'doctor@example.com' ? 'doctor' : 'patient';
+      
+      const [newUser] = await db.insert(users).values({
+        uid,
+        email,
+        name,
+        role,
+      }).returning();
+      
+      return newUser;
     } else {
-      const data = doc.data();
-      await userRef.update({ email, name });
-      return { ...data, email, name };
+      if (existingUser.email !== email || existingUser.name !== name) {
+        const [updatedUser] = await db.update(users)
+          .set({ email, name })
+          .where(eq(users.uid, uid))
+          .returning();
+        return updatedUser;
+      }
+      return existingUser;
     }
   } catch (error) {
     console.error("Database user error:", error);
@@ -24,10 +36,6 @@ export async function getOrCreateUser(uid: string, email: string, name: string) 
 }
 
 export async function getUserRole(uid: string): Promise<string> {
-  const userRef = adminDb.collection('users').doc(uid);
-  const doc = await userRef.get();
-  if (doc.exists) {
-    return doc.data()?.role || 'patient';
-  }
-  return 'patient';
+  const user = await db.select({ role: users.role }).from(users).where(eq(users.uid, uid)).get();
+  return user?.role || 'patient';
 }

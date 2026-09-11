@@ -1,6 +1,6 @@
 import { supabase } from './lib/supabase';
-import { useState, useMemo, useEffect } from 'react';
-import { TAMIL_NADU_HOSPITALS } from './data/tamilNaduHospitals';
+import { useState, useEffect, useMemo } from 'react';
+
 import { Hospital, SearchFilters, User } from './types';
 import { Navbar } from './components/Navbar';
 import { AuthModal } from './components/AuthModal';
@@ -34,8 +34,8 @@ export default function PatientApp() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  const [allHospitals] = useState<Hospital[]>(TAMIL_NADU_HOSPITALS);
-  const [hospitals] = useState<Hospital[]>(TAMIL_NADU_HOSPITALS);
+  const [allHospitals, setAllHospitals] = useState<Hospital[]>([]);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [features, setFeatures] = useState({
     aiAssistant: true,
     onlineConsultation: true,

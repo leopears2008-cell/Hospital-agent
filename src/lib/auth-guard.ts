@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUser, useOrganizationList } from '@clerk/react';
+import { useUser, useOrganizationList, useAuth } from '@clerk/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export interface AuthState {
@@ -11,6 +11,7 @@ export interface AuthState {
 
 export function useAuthGuard() {
   const { user, isLoaded: userLoaded } = useUser();
+  const { getToken } = useAuth();
   const { userMemberships, isLoaded: orgsLoaded } = useOrganizationList({
     userMemberships: {
       infinite: true,
@@ -66,9 +67,13 @@ export function useAuthGuard() {
     // Sync with the backend working model
     const syncUser = async () => {
       try {
+        const token = await getToken();
         const response = await fetch('/api/auth/sync', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
           body: JSON.stringify({
             uid: user.id,
             email: user.primaryEmailAddress?.emailAddress,
@@ -115,7 +120,7 @@ export function useAuthGuard() {
     };
     
     syncUser();
-  }, [user, userLoaded, orgsLoaded, userMemberships, location.pathname, navigate]);
+  }, [user, userLoaded, orgsLoaded, userMemberships, location.pathname, navigate, getToken]);
 
   return authState;
 }

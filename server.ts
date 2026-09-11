@@ -1,5 +1,7 @@
 import "dotenv/config";
 import express from "express";
+import { clerkMiddleware } from '@clerk/express';
+
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -9,45 +11,121 @@ import { getOrCreateUser } from "./src/db/users.ts";
 import { createAppointment, getUserAppointments, getDoctorAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
 import { getUserRole } from "./src/db/users.ts";
 import { sendAutomatedAppointmentEmail } from "./src/lib/emailService.ts";
-import { TAMIL_NADU_HOSPITALS } from "./src/data/tamilNaduHospitals.ts";
-import { MOCK_DOCTORS } from "./src/data/doctors.ts";
+import { db } from "./src/db/index.ts";
+import { hospitals, doctors, appointments } from "./src/db/schema.ts";
+import { eq } from "drizzle-orm";
 
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-
-
-function retrieveKnowledgeBase(query: string) {
-  const normalizedQuery = query.toLowerCase();
-  const keywords = normalizedQuery.split(/\s+/).filter(k => k.length > 2);
-  
-  let matchedHospitals = TAMIL_NADU_HOSPITALS.filter(h => {
-    const searchString = `${h.name} ${h.cityOrDistrict} ${h.specialty} ${h.address}`.toLowerCase();
-    return keywords.some(k => searchString.includes(k));
+if (process.env.CLERK_SECRET_KEY) {
+  app.use(clerkMiddleware());
+} else {
+  // mock clerk middleware
+  app.use((req: any, res, next) => {
+    req.auth = { userId: "mock-user-123" };
+    next();
   });
-
-  if (matchedHospitals.length === 0) matchedHospitals = TAMIL_NADU_HOSPITALS.slice(0, 15);
-  else if (matchedHospitals.length > 15) matchedHospitals = matchedHospitals.slice(0, 15);
-
-  let matchedDoctors = MOCK_DOCTORS.filter(d => {
-    const searchString = `${d.name} ${d.department} ${d.specialization}`.toLowerCase();
-    return keywords.some(k => searchString.includes(k));
-  });
-  
-  if (matchedDoctors.length === 0) matchedDoctors = MOCK_DOCTORS.slice(0, 10);
-  else if (matchedDoctors.length > 10) matchedDoctors = matchedDoctors.slice(0, 10);
-
-  return `--- INTERNAL KNOWLEDGE BASE (Tamil Nadu Hospitals & Doctors) ---\nHOSPITALS:\n${JSON.stringify(matchedHospitals.map(h => ({ id: h.id, name: h.name, city: h.cityOrDistrict, specialty: h.specialty, emergency: h.emergencyAvailable, address: h.address, rating: h.rating })), null, 2)}\nDOCTORS:\n${JSON.stringify(matchedDoctors.map(d => ({ id: d.id, name: d.name, department: d.department, specialization: d.specialization, fee: d.consultationFee, availableDays: d.availableDays, rating: d.rating })), null, 2)}\n--- INSTRUCTIONS: Use the above verified internal data to answer the user's question. Do not invent hospitals or doctors that are not in this list.`;
 }
+
+
+
+async function retrieveKnowledgeBase(query: string) {
+  const keywords = query.toLowerCase().split(' ').filter(w => w.length > 3);
+  
+  try {
+    
+    
+    
+    const allHospitals = await db.select().from(hospitals).all();
+    let matchedHospitals = allHospitals.filter((h: any) => {
+      const searchString = `${h.name} ${h.cityOrDistrict} ${h.specialty} ${h.address}`.toLowerCase();
+      return keywords.some(k => searchString.includes(k));
+    });
+    if (matchedHospitals.length === 0) matchedHospitals = allHospitals.slice(0, 15);
+    else if (matchedHospitals.length > 15) matchedHospitals = matchedHospitals.slice(0, 15);
+
+    const allDoctors = await db.select().from(doctors).all();
+    let matchedDoctors = allDoctors.filter((d: any) => {
+      const searchString = `${d.name} ${d.department} ${d.specialization}`.toLowerCase();
+      return keywords.some(k => searchString.includes(k));
+    });
+    if (matchedDoctors.length === 0) matchedDoctors = allDoctors.slice(0, 10);
+    else if (matchedDoctors.length > 10) matchedDoctors = matchedDoctors.slice(0, 10);
+
+    return `--- INTERNAL KNOWLEDGE BASE (Tamil Nadu Hospitals & Doctors) ---\nHOSPITALS:\n${JSON.stringify(matchedHospitals.map((h: any) => ({ id: h.id, name: h.name, city: h.cityOrDistrict, specialty: h.specialty, emergency: h.emergencyAvailable, address: h.address, rating: h.rating })), null, 2)}\nDOCTORS:\n${JSON.stringify(matchedDoctors.map((d: any) => ({ id: d.id, name: d.name, department: d.department, specialization: d.specialization, fee: d.consultationFee, availableDays: typeof d.availableDays === 'string' ? JSON.parse(d.availableDays) : d.availableDays, rating: d.rating })), null, 2)}\n--- INSTRUCTIONS: Use the above verified internal data to answer the user's question. Do not invent hospitals or doctors that are not in this list.`;
+  } catch (e) {
+    console.error("Simple context error:", e);
+    return "";
+  }
+}
+
+// --- DB API Endpoints ---
+app.get("/api/hospitals", async (req, res) => {
+  try {
+    
+    
+    const allHospitals = await db.select().from(hospitals).all();
+    res.json(allHospitals);
+  } catch (error) {
+    console.error("Fetch hospitals:", error);
+    res.status(500).json({ error: "Failed to fetch" });
+  }
+});
+
+app.get("/api/doctors", async (req, res) => {
+  try {
+    
+    const { doctors } = require('./src/db/schema.ts');
+    const allDoctors = await db.select().from(doctors).all();
+    res.json(allDoctors.map(d => ({...d, availableDays: typeof d.availableDays === 'string' ? JSON.parse(d.availableDays) : d.availableDays})));
+  } catch (error) {
+    console.error("Fetch doctors:", error);
+    res.status(500).json({ error: "Failed to fetch" });
+  }
+});
+
+app.get("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user?.uid;
+    
+    const { appointments } = require('./src/db/schema.ts');
+    
+    
+    if (req.user?.role === 'admin' || req.user?.role === 'doctor') {
+      const allAppts = await db.select().from(appointments).all();
+      return res.json(allAppts);
+    }
+    
+    const userAppts = await db.select().from(appointments).where(eq(appointments.userId, userId)).all();
+    res.json(userAppts);
+  } catch (error) {
+    console.error("Fetch appointments:", error);
+    res.status(500).json({ error: "Failed to fetch" });
+  }
+});
+
+app.post("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    
+    const appt = await createAppointment(req.body);
+    res.json(appt);
+  } catch (err: any) {
+    console.error("Create appointment:", err);
+    res.status(500).json({ error: err.message || "Failed to create" });
+  }
+});
+
+// --- AI / RAG / Interactions ---
 
 // Instantiate the agent globally
 const aiAgent = new HospitalAIAgent(process.env.GEMINI_API_KEY!);
 
 
 
-app.post("/api/auth/sync", async (req, res) => {
+app.post("/api/auth/sync", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { uid, email, name } = req.body;
     if (!uid) {
@@ -236,60 +314,10 @@ ${knowledgeBaseContext}
 });
 
 
-import { PgVectorStore, EmbeddingProvider } from './src/lib/vector-store.ts';
 
-class GeminiEmbeddingProvider implements EmbeddingProvider {
-  private ai: any;
-  constructor(ai: any) {
-    this.ai = ai;
-  }
-  
-  async embedText(text: string): Promise<number[]> {
-    const response = await this.ai.models.embedContent({
-      model: 'text-embedding-004',
-      contents: text,
-    });
-    return response.embeddings[0].values;
-  }
-  
-  async embedBatch(texts: string[]): Promise<number[][]> {
-    const promises = texts.map(t => this.embedText(t));
-    return Promise.all(promises);
-  }
-}
 
-let vectorStore: PgVectorStore | null = null;
-try {
-  vectorStore = new PgVectorStore(new GeminiEmbeddingProvider(getAiClient()));
-} catch (e) {
-  console.error("Could not init vectorStore", e);
-}
 
-app.post("/api/semantic-search", async (req, res) => {
-  try {
-    const { query, topK = 5, documentType, hospitalId, department } = req.body;
-    if (!query) {
-      return res.status(400).json({ error: "Query is required" });
-    }
-    
-    if (!vectorStore) {
-      return res.status(500).json({ error: "Vector store not initialized" });
-    }
-    
-    const filter: any = {};
-    if (documentType) filter.documentType = documentType;
-    if (hospitalId) filter.hospitalId = hospitalId;
-    if (department) filter.department = department;
-
-    const results = await vectorStore.similaritySearch(query, topK, Object.keys(filter).length > 0 ? filter : undefined);
-    res.json({ results });
-  } catch (error: any) {
-    console.error("Semantic search error:", error);
-    res.status(500).json({ error: "Failed to perform semantic search" });
-  }
-});
-
-async function startServer() {
+(async () => {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -307,6 +335,5 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
-}
+})();
 
-startServer();

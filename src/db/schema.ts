@@ -1,59 +1,55 @@
-import { relations } from 'drizzle-orm';
-import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core';
 
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  uid: text('uid').notNull().unique(), // Firebase Auth UID
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  uid: text('uid').notNull().unique(), // Clerk user ID
   email: text('email').notNull(),
   name: text('name').notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
+  role: text('role').notNull().default('patient'), // patient, doctor, admin
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-export const appointments = pgTable('appointments', {
-  id: serial('id').primaryKey(),
-  hospitalId: text('hospital_id').notNull(),
+export const hospitals = sqliteTable('hospitals', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  address: text('address').notNull(),
+  cityOrDistrict: text('city_or_district').notNull(),
+  specialty: text('specialty').notNull(),
+  contactNumber: text('contact_number'),
+  emergencyAvailable: integer('emergency_available', { mode: 'boolean' }).notNull().default(false),
+  rating: real('rating'),
+  lat: real('lat'),
+  lng: real('lng'),
+  facilities: text('facilities', { mode: 'json' }), // Array
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const doctors = sqliteTable('doctors', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  specialization: text('specialization').notNull(),
+  qualification: text('qualification').notNull(),
+  experienceYears: integer('experience_years').notNull(),
+  hospitalId: text('hospital_id').notNull().references(() => hospitals.id),
+  department: text('department').notNull(),
+  consultationFee: integer('consultation_fee').notNull(),
+  availableDays: text('available_days', { mode: 'json' }).notNull(),
+  availableTimeSlots: text('available_time_slots', { mode: 'json' }).notNull(),
+  rating: real('rating'),
+  photo: text('photo'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const appointments = sqliteTable('appointments', {
+  id: text('id').primaryKey(),
+  hospitalId: text('hospital_id').notNull().references(() => hospitals.id),
+  doctorId: text('doctor_id').notNull().references(() => doctors.id),
   userId: text('user_id').notNull().references(() => users.uid),
   patientName: text('patient_name').notNull(),
-  date: text('date').notNull(),
-  time: text('time').notNull(),
+  date: text('date').notNull(), // YYYY-MM-DD
+  time: text('time').notNull(), // HH:MM AM/PM
   symptoms: text('symptoms'),
-  status: text('status', { enum: ['pending', 'confirmed', 'cancelled'] }).notNull().default('pending'),
-  createdAt: timestamp('created_at').defaultNow(),
-});
-
-export const usersRelations = relations(users, ({ many }) => ({
-  appointments: many(appointments),
-}));
-
-export const appointmentsRelations = relations(appointments, ({ one }) => ({
-  user: one(users, {
-    fields: [appointments.userId],
-    references: [users.uid],
-  }),
-}));
-
-
-import { customType, index } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
-
-const vector = customType<{ data: number[], driverData: string }>({
-  dataType() {
-    return 'vector(768)';
-  },
-  toDriver(value) {
-    return JSON.stringify(value);
-  },
-  fromDriver(value) {
-    return JSON.parse(value as string);
-  },
-});
-
-export const knowledge_chunks = pgTable('knowledge_chunks', {
-  id: serial('id').primaryKey(),
-  documentId: text('document_id').notNull(),
-  documentType: text('document_type').notNull(),
-  content: text('content').notNull(),
-  metadata: text('metadata').notNull(), // JSON stringified metadata
-  embedding: vector('embedding'),
-  createdAt: timestamp('created_at').defaultNow(),
+  status: text('status').notNull().default('pending'), // pending, confirmed, cancelled
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });

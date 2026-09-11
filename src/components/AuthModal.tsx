@@ -17,9 +17,9 @@ export function AuthModal({ isOpen, onClose, initialView = 'login' }: AuthModalP
       <DialogContent className="max-w-md w-full p-0 border-0 bg-transparent shadow-none [&>button]:hidden">
         <div className="flex justify-center w-full">
           {initialView === 'login' ? (
-            <SignIn routing="virtual" />
+            <SignIn routing="hash" />
           ) : (
-            <SignUp routing="virtual" />
+            <SignUp routing="hash" />
           )}
         </div>
       </DialogContent>

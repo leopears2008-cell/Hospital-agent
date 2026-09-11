@@ -1,10 +1,11 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { X, Calendar, Clock, User as UserIcon, FileText, CheckCircle, ChevronRight, ChevronLeft, MapPin, Search, QrCode } from 'lucide-react';
 import { Hospital, User, Doctor } from '../types';
+import { useAuth } from '@clerk/react';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, runTransaction, doc, query, getDocs, where } from 'firebase/firestore';
 import { sendEmail } from '../lib/gmail';
-import { MOCK_DOCTORS } from '../data/doctors';
+
 
 interface AppointmentModalProps {
   hospital: Hospital;
@@ -15,6 +16,7 @@ interface AppointmentModalProps {
 
 export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }: AppointmentModalProps) {
   const [step, setStep] = useState(1);
+  const { getToken } = useAuth();
   
   const [department, setDepartment] = useState('');
   const [doctorId, setDoctorId] = useState('');
@@ -28,6 +30,14 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
   const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
   
   const [loading, setLoading] = useState(false);
+  const [MOCK_DOCTORS, setDoctors] = useState<any[]>([]);
+
+  useEffect(() => {
+    
+    fetch('/api/doctors').then(res => res.json()).then(setDoctors).catch(console.error);
+
+  }, []);
+
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [appointmentId, setAppointmentId] = useState('');
@@ -52,6 +62,7 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
     setStep(s => s - 1);
   };
 
+  
   const handleSubmit = async () => {
     if (!currentUser) {
       onOpenAuth('login');
@@ -60,78 +71,39 @@ export function AppointmentModal({ hospital, currentUser, onClose, onOpenAuth }:
     
     setLoading(true);
     setError('');
-
+    
     try {
-      const firebaseUser = { id: "mock-user-123" };
-      if (!firebaseUser) throw new Error("Authentication required");
-      
-      const appointmentData = {
-        hospitalId: hospital.id,
-        doctorId,
-        department,
-        userId: firebaseUser.id,
-        patientName,
-        patientAge: parseInt(patientAge),
-        patientPhone,
-        date,
-        time,
-        status: 'pending',
-        symptoms,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-      
-      // Double-booking check using a transactional-like check (or robust query)
-      const q = query(
-        collection(db, 'appointments'),
-        where('doctorId', '==', doctorId),
-        where('date', '==', date),
-        where('time', '==', time),
-        where('status', 'in', ['pending', 'confirmed'])
-      );
-      const existing = await getDocs(q);
-      if (!existing.empty) {
-        throw new Error("This time slot has just been booked by someone else. Please choose another slot.");
-      }
+      const token = await getToken();
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          hospitalId: hospital.id,
+          doctorId,
+          userId: currentUser.id,
+          patientName,
+          date,
+          time,
+          symptoms
+        })
+      });
 
-      const docRef = await addDoc(collection(db, 'appointments'), appointmentData);
-      const aptId = docRef.id;
-      setAppointmentId(aptId);
-      setSuccess(true);
-      
-      // Try to send confirmation email
-      if (currentUser?.email && sendEmailConfirmation) {
-        try {
-          const emailSubject = `Appointment Confirmed: ${hospital.name}`;
-          const emailBody = `Dear ${patientName},\n\nYour appointment at ${hospital.name} has been confirmed.\n\nDetails:\nDoctor: ${selectedDoctor?.name || department}\nDate: ${date}\nTime: ${time}\nAppointment ID: ${aptId}\n\nPlease arrive 15 minutes before your scheduled time.\n\nThank you for using Hospital AI Agent.`;
-          await sendEmail(currentUser.email, emailSubject, emailBody);
-          console.log("Confirmation email sent.");
-        } catch (emailErr) {
-          console.error("Failed to send confirmation email:", emailErr);
-        }
+      if (!response.ok) {
+        throw new Error("Failed to book appointment");
       }
-    } catch (err: any) {
-      console.error('Booking error:', err);
-      setError(err.message || 'Failed to book appointment. Please try again.');
+      
+      const data = await response.json();
+      setAppointmentId(data.id || 'success');
+      setSuccess(true);
+    } catch(e: any) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
   };
-
-  if (!currentUser) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div className="bg-white rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl">
-          <h2 className="text-xl font-bold mb-3 text-slate-800">Sign in Required</h2>
-          <p className="text-slate-500 mb-8 text-sm">You must be signed in to book an appointment.</p>
-          <div className="flex gap-3 justify-center">
-            <button onClick={onClose} className="flex-1 px-4 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
-            <button onClick={() => { onClose(); onOpenAuth('login'); }} className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-md shadow-blue-200 transition-colors">Login Now</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">

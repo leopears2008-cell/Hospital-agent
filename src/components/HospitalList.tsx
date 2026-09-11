@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useState, useEffect, useMemo } from 'react';
 import { Search, MapPin, Phone, Bed, Star, ShieldAlert, Building2, Navigation, Compass, ExternalLink, ShieldCheck, Award, MessageCircle } from 'lucide-react';
 import { Hospital, SearchFilters } from '../types';
-import { MEDICAL_SPECIALTIES } from '../data/tamilNaduHospitals';
+
 import { getUniqueDistricts } from '../utils/hospitals';
 
 interface HospitalListProps {
@@ -57,6 +57,7 @@ export function HospitalList({
   onOpenNavigation,
 }: HospitalListProps) {
   const [isSearching, setIsSearching] = useState(false);
+  const MEDICAL_SPECIALTIES = ["All Specialties", ...Array.from(new Set(allHospitals.map(h => h.specialty)))];
 
   // Calculate unique districts dynamically from all hospitals
   const dynamicDistricts = useMemo(() => getUniqueDistricts(allHospitals), [allHospitals]);

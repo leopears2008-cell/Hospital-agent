@@ -1,4 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+const fs = require('fs');
+let content = fs.readFileSync('src/middleware/auth.ts', 'utf8');
+
+const newAuth = `import { Request, Response, NextFunction } from 'express';
 import { requireAuth as clerkRequireAuth } from '@clerk/express';
 import { getUserRole } from '../db/users.ts';
 
@@ -53,3 +56,19 @@ export const requireDoctor = [
     next();
   }
 ];
+`;
+
+fs.writeFileSync('src/middleware/auth.ts', newAuth);
+
+let serverContent = fs.readFileSync('server.ts', 'utf8');
+serverContent = serverContent.replace('app.use(clerkMiddleware());', 
+  `if (process.env.CLERK_SECRET_KEY) {
+  app.use(clerkMiddleware());
+} else {
+  // mock clerk middleware
+  app.use((req: any, res, next) => {
+    req.auth = { userId: "mock-user-123" };
+    next();
+  });
+}`);
+fs.writeFileSync('server.ts', serverContent);
