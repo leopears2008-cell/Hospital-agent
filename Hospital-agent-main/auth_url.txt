@@ -1,0 +1,5 @@
+Opening your browser to sign in. If it doesn't open, use this URL:
+  [36mhttps://clerk.clerk.com/oauth/authorize?client_id=x7Fzlnxuu5I6UUa4&redirect_uri=http%3A%2F%2F127.0.0.1%3A18500%2Fcallback&response_type=code&scope=&state=_OYYt4Nf62sGzl712h5Gg6XXY_ybXrVmb5jbl2zYvQ8&code_challenge=FoWZjEY4ZIO8pYhDM6en5Wd8RIbcmBgHGND2MPYHvxM&code_challenge_method=S256&clerk_client=cli[0m
+[33mHost-only Clerk state or capabilities may be unavailable in agent mode (possible sandboxed run). If this looks wrong, re-run on the host shell before trusting auth, link, env, or API failures.[0m
+[33mCould not open your browser automatically [2m(spawn-failed)[0m. Open the URL above to continue.[0m
+Waiting for authentication (timeout in 15m)...
