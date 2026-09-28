@@ -269,8 +269,6 @@ Contributions, issues and feature requests are welcome!
 
 <div align="center">
 
-**Built with ❤️ using React, Node.js and Gemini AI**
 
-⭐ If you find this project useful, please give it a star!
 
 </div>
