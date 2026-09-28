@@ -13,11 +13,71 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* TN sevai brand utilities (additive, visual only) */
+  .text-gradient-brand {
+    background-image: linear-gradient(90deg, var(--brand-blue), var(--brand-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .bg-gradient-brand {
+    background-image: linear-gradient(135deg, var(--brand-blue), var(--brand-cyan));
+  }
+  .glass {
+    background: color-mix(in oklch, white 70%, transparent);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+  }
+  .glass-panel {
+    background-color: color-mix(in oklch, var(--card) 70%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+  }
+  .glow-ring {
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--brand-cyan) 40%, transparent),
+      0 8px 30px -12px color-mix(in oklch, var(--brand-blue) 45%, transparent);
+  }
+  .shadow-brand {
+    box-shadow: 0 20px 45px -15px color-mix(in oklch, var(--brand-blue) 45%, transparent);
+  }
+  .animate-slide-up { animation: ts-slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .animate-float { animation: ts-float 6s ease-in-out infinite; }
+  .animate-float-slow { animation: ts-float 9s ease-in-out infinite; }
+  .animate-pulse-ring { animation: ts-pulse-ring 2.4s ease-out infinite; }
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.in-view { opacity: 1; transform: translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .animate-float, .animate-float-slow, .animate-pulse-ring, .animate-slide-up { animation: none !important; }
+    html { scroll-behavior: auto !important; }
+  }
+}
+
+@keyframes ts-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ts-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes ts-pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand-cyan) 45%, transparent); }
+  100% { box-shadow: 0 0 0 14px color-mix(in oklch, var(--brand-cyan) 0%, transparent); }
 }
 
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-cyan: var(--brand-cyan);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -59,6 +119,8 @@
 }
 
 :root {
+  --brand-blue: oklch(0.3 0.1 255);
+  --brand-cyan: oklch(0.75 0.13 200);
   --background: oklch(0.99 0 0);
   --foreground: oklch(0.15 0.02 250);
   --card: oklch(1 0 0);
@@ -94,6 +156,8 @@
 }
 
 .dark {
+  --brand-blue: oklch(0.55 0.14 250);
+  --brand-cyan: oklch(0.78 0.13 200);
   --background: oklch(0.15 0.02 250);
   --foreground: oklch(0.98 0 0);
   --card: oklch(0.2 0.03 250);
