@@ -1,0 +1,6 @@
+{
+  "framework": "vite",
+  "installCommand": "npm install --prefix Hospital-agent-main",
+  "buildCommand": "npm run build --prefix Hospital-agent-main",
+  "outputDirectory": "Hospital-agent-main/dist"
+}
