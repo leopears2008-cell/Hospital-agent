@@ -107,8 +107,8 @@ app.post('/api/appointments', requireAuth, async (req: AuthRequest, res) => {
     const { hospitalId, doctorId, patientName, date, time, symptoms } = req.body ?? {};
     if (typeof hospitalId !== 'string' || !hospitalId.trim() || typeof doctorId !== 'string' || !doctorId.trim() ||
         typeof patientName !== 'string' || patientName.trim().length < 2 || patientName.trim().length > 160 ||
-        typeof date !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date) ||
-        typeof time !== 'string' || !/^(0?[1-9]|1[0-2]):[0-5]\\d\\s?(AM|PM)$/i.test(time) ||
+        typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+        typeof time !== 'string' || !/^(0?[1-9]|1[0-2]):[0-5]\d\\s?(AM|PM)$/i.test(time) ||
         (symptoms !== undefined && (typeof symptoms !== 'string' || symptoms.length > 2000))) {
       return res.status(400).json({ error: 'Invalid appointment details.' });
     }
