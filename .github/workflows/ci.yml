@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-and-typecheck:
@@ -17,13 +17,25 @@ jobs:
         working-directory: Hospital-agent-main
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Check out the branch itself so a generated lockfile can be committed safely.
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: Hospital-agent-main/package.json
-      - name: Install dependencies
+      - name: Install dependencies and generate lockfile
         run: npm install --no-audit --no-fund
+      - name: Commit generated lockfile if missing
+        run: |
+          if [ -f package-lock.json ] && ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: add npm lockfile"
+            git push origin "HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          fi
       - name: TypeScript check
         run: npm run lint
       - name: Production build
