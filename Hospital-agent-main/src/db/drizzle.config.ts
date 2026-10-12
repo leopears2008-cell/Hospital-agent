@@ -1,28 +1,16 @@
-import { defineConfig } from "drizzle-kit";
-import * as dotenv from "dotenv";
+import { defineConfig } from 'drizzle-kit';
+import 'dotenv/config';
 
-dotenv.config();
-
-const sqlHost = process.env.SQL_HOST;
-const sqlDbName = process.env.SQL_DB_NAME;
-const user = process.env.SQL_ADMIN_USER;
-const password = process.env.SQL_ADMIN_PASSWORD;
-
-if (!sqlHost || !sqlDbName || !user || !password) {
-  console.warn("Database credentials missing. Skipping drizzle kit config loading.");
-}
+const url = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL || 'file:./local.db';
 
 export default defineConfig({
-  schema: "./src/db/schema.ts",
-  out: "./drizzle",
-  dialect: "postgresql",
-  schemaFilter: ["public"],
+  schema: './src/db/schema.ts',
+  out: './drizzle',
+  dialect: 'turso',
   dbCredentials: {
-    host: sqlHost || "",
-    user: user || "",
-    password: password || "",
-    database: sqlDbName || "",
-    ssl: false,
+    url,
+    ...(process.env.TURSO_AUTH_TOKEN ? { authToken: process.env.TURSO_AUTH_TOKEN } : {}),
   },
   verbose: true,
+  strict: true,
 });

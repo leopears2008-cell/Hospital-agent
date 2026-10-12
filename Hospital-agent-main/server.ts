@@ -7,6 +7,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { HospitalAIAgent } from "./src/lib/ai-agent.ts";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
+import { validateAppointmentInput } from "./src/lib/appointment-validation.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { createAppointment, getUserAppointments, getDoctorAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
 import { getUserRole } from "./src/db/users.ts";
@@ -17,18 +18,14 @@ import { eq } from "drizzle-orm";
 
 
 const app = express();
-const PORT = 3000;
-
-app.use(express.json());
-if (process.env.CLERK_SECRET_KEY) {
-  app.use(clerkMiddleware());
-} else {
-  // mock clerk middleware
-  app.use((req: any, res, next) => {
-    req.auth = { userId: "mock-user-123" };
-    next();
-  });
+const PORT = Number(process.env.PORT || 3000);
+if (process.env.NODE_ENV === "production" && !process.env.CLERK_SECRET_KEY) {
+  throw new Error("CLERK_SECRET_KEY is required in production. Configure Clerk before deploying.");
 }
+
+app.use(express.json({ limit: "1mb" }));
+// Clerk is mandatory: no mock identities or unauthenticated fallback.
+app.use(clerkMiddleware());
 
 
 
@@ -78,7 +75,6 @@ app.get("/api/hospitals", async (req, res) => {
 app.get("/api/doctors", async (req, res) => {
   try {
     
-    const { doctors } = require('./src/db/schema.ts');
     const allDoctors = await db.select().from(doctors).all();
     res.json(allDoctors.map(d => ({...d, availableDays: typeof d.availableDays === 'string' ? JSON.parse(d.availableDays) : d.availableDays})));
   } catch (error) {
@@ -91,15 +87,15 @@ app.get("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
   try {
     const userId = req.user?.uid;
     
-    const { appointments } = require('./src/db/schema.ts');
-    
-    
-    if (req.user?.role === 'admin' || req.user?.role === 'doctor') {
+    if (req.user?.role === 'admin' || req.user?.role === 'super_admin') {
       const allAppts = await db.select().from(appointments).all();
       return res.json(allAppts);
     }
-    
-    const userAppts = await db.select().from(appointments).where(eq(appointments.userId, userId)).all();
+    if (req.user?.role === 'doctor') {
+      // Doctor accounts must be explicitly linked to doctor records before patient data is exposed.
+      return res.status(403).json({ error: 'Doctor account is not linked to a doctor record.' });
+    }
+    const userAppts = await db.select().from(appointments).where(eq(appointments.userId, userId!)).all();
     res.json(userAppts);
   } catch (error) {
     console.error("Fetch appointments:", error);
@@ -107,14 +103,48 @@ app.get("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-app.post("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
+app.post('/api/appointments', requireAuth, async (req: AuthRequest, res) => {
   try {
-    
-    const appt = await createAppointment(req.body);
-    res.json(appt);
+    const validationError = validateAppointmentInput(req.body ?? {});
+    if (validationError) return res.status(400).json({ error: validationError });
+    const { hospitalId, doctorId, patientName, date, time, symptoms } = req.body;
+    const appt = await createAppointment({ hospitalId, doctorId, patientName, date, time, symptoms, userId: req.user!.uid });
+    return res.status(201).json(appt);
   } catch (err: any) {
-    console.error("Create appointment:", err);
-    res.status(500).json({ error: err.message || "Failed to create" });
+    console.error('Create appointment:', err);
+    const clientError = /Invalid hospital|Invalid doctor/.test(err?.message || '');
+    return res.status(clientError ? 400 : 500).json({ error: clientError ? err.message : 'Failed to create appointment.' });
+  }
+});
+
+app.patch('/api/appointments/:id/status', requireAuth, async (req: AuthRequest, res) => {
+  const { status } = req.body ?? {};
+  if (!['pending', 'confirmed', 'cancelled'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid appointment status.' });
+  }
+  try {
+    const uid = req.user!.uid;
+    const role = req.user!.role;
+    if (role === 'admin' || role === 'super_admin') {
+      const updated = await updateAppointmentStatus(req.params.id, status as 'pending' | 'confirmed' | 'cancelled');
+      return updated ? res.json(updated) : res.status(404).json({ error: 'Appointment not found.' });
+    }
+    if (status !== 'cancelled') return res.status(403).json({ error: 'Only an administrator can confirm or reopen appointments.' });
+    const updated = await updateAppointmentStatus(req.params.id, 'cancelled', uid);
+    return updated ? res.json(updated) : res.status(404).json({ error: 'Appointment not found or not owned by this user.' });
+  } catch (error) {
+    console.error('Update appointment status:', error);
+    return res.status(500).json({ error: 'Failed to update appointment status.' });
+  }
+});
+
+app.delete('/api/appointments/:id', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const updated = await updateAppointmentStatus(req.params.id, 'cancelled', req.user!.uid);
+    return updated ? res.json({ success: true, appointment: updated }) : res.status(404).json({ error: 'Appointment not found or not owned by this user.' });
+  } catch (error) {
+    console.error('Cancel appointment:', error);
+    return res.status(500).json({ error: 'Failed to cancel appointment.' });
   }
 });
 
@@ -127,13 +157,13 @@ const aiAgent = new HospitalAIAgent(process.env.GEMINI_API_KEY!);
 
 app.post("/api/auth/sync", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const { uid, email, name } = req.body;
-    if (!uid) {
-      return res.status(400).json({ error: "UID is required" });
+    const uid = req.user?.uid;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+    const { email, name } = req.body ?? {};
+    if ((email !== undefined && typeof email !== 'string') || (name !== undefined && typeof name !== 'string')) {
+      return res.status(400).json({ error: 'Invalid profile details.' });
     }
-    
-    // getOrCreateUser handles creating the user in Firebase and returning the role
-    const userData = await getOrCreateUser(uid, email, name);
+    const userData = await getOrCreateUser(uid, email || undefined, name || undefined);
     
     res.json({ success: true, user: userData, role: userData.role });
   } catch (error: any) {
@@ -170,7 +200,7 @@ app.post("/api/symptom-checker", async (req, res) => {
     const ai = getAiClient();
     
     // RAG step: Retrieve internal data based on the latest answer
-    const knowledgeBaseContext = retrieveKnowledgeBase(currentAnswer);
+    const knowledgeBaseContext = await retrieveKnowledgeBase(currentAnswer);
     
     // Convert history into a string
     const historyText = history.map((item: any) => `${item.role === 'ai' ? 'AI' : 'User'}: ${item.text}`).join('\n');
@@ -243,7 +273,7 @@ app.post("/api/ai-recommend", async (req, res) => {
     
     // RAG step: Retrieve internal data based on the full query context
     const retrievalQuery = `${query} ${district} ${specialty}`;
-    const knowledgeBaseContext = retrieveKnowledgeBase(retrievalQuery);
+    const knowledgeBaseContext = await retrieveKnowledgeBase(retrievalQuery);
 
     const prompt = `You are a Tamil Nadu medical healthcare advisor and directory assistant.
 The user is searching for hospitals in Tamil Nadu with the following details:

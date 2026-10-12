@@ -1,64 +1,57 @@
 import { db } from './index.ts';
-import { appointments } from './schema.ts';
-import { eq } from 'drizzle-orm';
+import { appointments, doctors, hospitals } from './schema.ts';
+import { and, eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-export async function createAppointment(data: { hospitalId: string, doctorId: string, userId: string, patientName: string, date: string, time: string, symptoms?: string }) {
+export type AppointmentInput = {
+  hospitalId: string;
+  doctorId: string;
+  patientName: string;
+  date: string;
+  time: string;
+  symptoms?: string;
+};
+
+export async function createAppointment(data: AppointmentInput & { userId: string }) {
   try {
-    const newId = uuidv4();
+    const hospital = await db.select({ id: hospitals.id }).from(hospitals).where(eq(hospitals.id, data.hospitalId)).get();
+    if (!hospital) throw new Error('Invalid hospital.');
+    const doctor = await db.select({ id: doctors.id, hospitalId: doctors.hospitalId }).from(doctors).where(eq(doctors.id, data.doctorId)).get();
+    if (!doctor || doctor.hospitalId !== data.hospitalId) throw new Error('Invalid doctor for the selected hospital.');
+
     const [appointment] = await db.insert(appointments).values({
-      id: newId,
+      id: uuidv4(),
       hospitalId: data.hospitalId,
       doctorId: data.doctorId,
       userId: data.userId,
-      patientName: data.patientName,
+      patientName: data.patientName.trim(),
       date: data.date,
       time: data.time,
-      symptoms: data.symptoms || '',
+      symptoms: data.symptoms?.trim() || '',
       status: 'pending',
     }).returning();
-        
     return appointment;
   } catch (error) {
-    console.error("Database appointment error:", error);
-    throw new Error("Failed to book appointment.", { cause: error });
+    console.error('Database appointment error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to book appointment.', { cause: error });
   }
 }
 
 export async function getDoctorAppointments(doctorId: string) {
-  try {
-    return await db.select().from(appointments).where(eq(appointments.doctorId, doctorId)).all();
-  } catch (error) {
-    console.error("Database fetch doctor appointments error:", error);
-    throw new Error("Failed to fetch doctor appointments.", { cause: error });
-  }
+  return db.select().from(appointments).where(eq(appointments.doctorId, doctorId)).all();
 }
 
 export async function getUserAppointments(userId: string) {
-  try {
-    return await db.select().from(appointments).where(eq(appointments.userId, userId)).all();
-  } catch (error) {
-    console.error("Database fetch appointments error:", error);
-    throw new Error("Failed to fetch appointments.", { cause: error });
-  }
+  return db.select().from(appointments).where(eq(appointments.userId, userId)).all();
 }
 
-export async function updateAppointmentStatus(id: string, userId: string, status: 'pending' | 'confirmed' | 'cancelled') {
-  try {
-    // Note: userId is passed to verify ownership if needed, but not enforced at this db query layer.
-    // Ensure the route handler enforces it.
-    const [appointment] = await db.update(appointments)
-      .set({ status, updatedAt: new Date() })
-      .where(eq(appointments.id, id))
-      .returning();
-      
-    if (!appointment) {
-      throw new Error("Appointment not found.");
-    }
-        
-    return appointment;
-  } catch (error) {
-    console.error("Database update appointment error:", error);
-    throw new Error("Failed to update appointment status.", { cause: error });
-  }
+export async function updateAppointmentStatus(id: string, status: 'pending' | 'confirmed' | 'cancelled', ownerUserId?: string) {
+  const conditions = ownerUserId
+    ? and(eq(appointments.id, id), eq(appointments.userId, ownerUserId))
+    : eq(appointments.id, id);
+  const [appointment] = await db.update(appointments)
+    .set({ status, updatedAt: new Date() })
+    .where(conditions)
+    .returning();
+  return appointment || null;
 }
