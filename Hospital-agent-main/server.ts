@@ -7,6 +7,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { HospitalAIAgent } from "./src/lib/ai-agent.ts";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
+import { validateAppointmentInput } from "./src/lib/appointment-validation.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { createAppointment, getUserAppointments, getDoctorAppointments, updateAppointmentStatus } from "./src/db/appointments.ts";
 import { getUserRole } from "./src/db/users.ts";
@@ -104,18 +105,9 @@ app.get("/api/appointments", requireAuth, async (req: AuthRequest, res) => {
 
 app.post('/api/appointments', requireAuth, async (req: AuthRequest, res) => {
   try {
-    const { hospitalId, doctorId, patientName, date, time, symptoms } = req.body ?? {};
-    if (typeof hospitalId !== 'string' || !hospitalId.trim() || typeof doctorId !== 'string' || !doctorId.trim() ||
-        typeof patientName !== 'string' || patientName.trim().length < 2 || patientName.trim().length > 160 ||
-        typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-        typeof time !== 'string' || !/^(0?[1-9]|1[0-2]):[0-5]\d\s?(AM|PM)$/i.test(time) ||
-        (symptoms !== undefined && (typeof symptoms !== 'string' || symptoms.length > 2000))) {
-      return res.status(400).json({ error: 'Invalid appointment details.' });
-    }
-    const parsedDate = new Date(date + 'T00:00:00Z');
-    if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date || date < new Date().toISOString().slice(0, 10)) {
-      return res.status(400).json({ error: 'Appointment date must be valid and not in the past.' });
-    }
+    const validationError = validateAppointmentInput(req.body ?? {});
+    if (validationError) return res.status(400).json({ error: validationError });
+    const { hospitalId, doctorId, patientName, date, time, symptoms } = req.body;
     const appt = await createAppointment({ hospitalId, doctorId, patientName, date, time, symptoms, userId: req.user!.uid });
     return res.status(201).json(appt);
   } catch (err: any) {
